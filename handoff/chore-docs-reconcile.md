@@ -5,6 +5,10 @@ Documentation reconciliation. No product code. Not a lane branch; no parent lane
 
 Base: `main` @ `f641756`.
 
+Completed across two sessions on this branch: the initial reconciliation pass, then a
+follow-up session that finished item 4 once `PROMPTS.md` was supplied. No new branch was
+cut for the follow-up — it closes work already scoped here.
+
 ---
 
 ## State found on arrival
@@ -26,7 +30,18 @@ item 3's unfilled bracket. No mechanism was changed.
 | 2 | `BUILD_PLAN.md` §3 / 0b | `see owner input §7.4` → `see owner input §8`. §7 is the checklist template and has no subsections; owner input is §8. |
 | 2 | `BUILD_PLAN.md` §6 | `full security audit against §6 checklist` → `against the §7 security block`. §6 is Hardening itself — the reference pointed at its own section. |
 
-Two lines changed. Nothing else was edited.
+Two lines changed in the first session. Nothing else was edited.
+
+### Follow-up session — item 4 completed
+
+`PROMPTS.md` was added to the repo root untracked and is now tracked on this branch.
+
+| Item | Change |
+|---|---|
+| 1 | `## Stop rule` reduced to one load-bearing sentence plus a pointer to `BUILD_PLAN.md` §2.1, matching the `CLAUDE.md` treatment. The handoff-file format, the `/clear` between-sessions guidance, and the resume instructions were kept — they are `PROMPTS.md`-specific operational content, not duplicates of §2.1. |
+| 1 | Dropped the `**Never in one session:**` paragraph — a second statement of the same rule, already covered by §2.1 and §2. |
+| 3 | Two in-template pointers reading `the format in the Stop rule section below` → `the handoff format in the Stop rule section below`, so the pointer names what it actually resolves to now that the section is reduced. |
+| 4 | The header line and both template blocks changed from reading the brief and plan "in Project knowledge" to reading them in the repo, and now state that the repo copy is authoritative. |
 
 ## Verified, no change needed
 
@@ -34,11 +49,12 @@ Two lines changed. Nothing else was edited.
 - **Item 3** — mechanism stated in §1 row 10 and §2; §2.1 adds "branch from `lane/<name>`,
   never from another `feat/` branch", which closes the S1/S2 ordering hole.
 - **Item 4** — §2.1 is marked **Canonical**; `CLAUDE.md` carries one load-bearing sentence
-  plus a pointer, not a copy.
+  plus a pointer, not a copy. Re-verified in the follow-up session: it had landed as the
+  first session described, so no rework was needed.
 - **Item 5** — present in §2.1 as a distinct trigger, separated from §8 items by the
   known-gap vs unknown-gap distinction.
-- **Cross-reference sweep** — every `§n` in `BUILD_PLAN.md`, `BUILD_BRIEF.md`, and
-  `CLAUDE.md` resolves to a real section. `DESIGN.md` is referenced in 6 places and does
+- **Cross-reference sweep** — every `§n` in `BUILD_PLAN.md`, `BUILD_BRIEF.md`,
+  `CLAUDE.md`, `PROMPTS.md`, and this handoff resolves to a real section (76 refs checked). `DESIGN.md` is referenced in 6 places and does
   not exist; it is a Phase 0b deliverable, not a stale pointer.
 
 ## Item 6 — §8 deadlines vs phase ordering
@@ -53,10 +69,8 @@ and more permissive of the two. Owner should pick one.
 
 ## Left undone
 
-- **PROMPTS.md (item 4, second half).** The file does not exist in the repo, in git
-  history, or anywhere under `~` to depth 4. Owner said it exists elsewhere and would
-  supply the path; the path did not arrive this session. Its stop-rule copy is therefore
-  **not** reduced to a pointer and remains a third copy that can drift from §2.1.
+None. `PROMPTS.md` — the only item the first session left open — was completed in the
+follow-up session recorded above.
 
 ## Contradictions found, out of scope, not fixed
 
@@ -68,3 +82,14 @@ and more permissive of the two. Owner should pick one.
    acceptance checklist" without qualifying which merge. Row 10 says sub-branch → lane
    auto-merges with no checklist. Row 4 predates row 10 and now reads as applying to both.
    Fixing it would have meant rewriting a locked-decision row, which was out of scope.
+4. **§2.1's definition of done cannot be met by Phase 0.** It requires "Green CI: lint,
+   typecheck, tests" of *every* sub-branch, but CI does not exist until S1 (`feat/spine-ci`),
+   and Phase 0's 0a and 0b run before Phase S. The same gap applies to auto-merge: §2.1 says
+   to open every sub-branch PR with auto-merge enabled, yet the S1 row is what enables
+   auto-merge on `lane/*` targets. 0a and 0b therefore have neither CI nor auto-merge.
+   Found in the follow-up session; fixing it would change phase ordering, which is out of scope.
+5. **`PROMPTS.md`'s template omits auto-merge.** Its `Then:` line says "open a PR into
+   [parent lane branch]" where §2.1 says to open it "with auto-merge enabled". The template
+   is not wrong, only silent, and it now points at §2.1 as canonical — but an agent pasting
+   the block without following the pointer would open a PR that never merges. Template block
+   contents were out of scope beyond the named cross-references.
