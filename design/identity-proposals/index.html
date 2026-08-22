@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Console identity proposals — Phase 0a</title>
+<meta name="description" content="Three original console identities for the portfolio shell, compared side by side with WCAG 2.2 AA contrast results in both themes.">
+<meta name="color-scheme" content="light dark">
+<style>
+/* ------------------------------------------------------------------
+   Page chrome. Neutral; follows the viewer's colour scheme.
+   Identity specimens below use their own fixed palettes, not these.
+   ------------------------------------------------------------------ */
+:root{
+  --pg-bg:#ECECEA; --pg-fg:#1A1A1A; --pg-muted:#5C5C5C; --pg-line:#CFCFCB; --pg-card:#FFFFFF;
+  --pg-pass-bg:#DDEFE2; --pg-pass-fg:#12532A; --pg-note-bg:#F3E8CF; --pg-note-fg:#5A4200; --pg-fail-bg:#F5D9D9; --pg-fail-fg:#7A1F1F;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --pg-bg:#171717; --pg-fg:#ECECEC; --pg-muted:#ABABAB; --pg-line:#333333; --pg-card:#202020;
+    --pg-pass-bg:#173522; --pg-pass-fg:#9FE0B4; --pg-note-bg:#3A2F12; --pg-note-fg:#F1D27C; --pg-fail-bg:#3F1B1B; --pg-fail-fg:#F2A8A8;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--pg-bg);color:var(--pg-fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:inherit}
+code{font:0.85em/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+h1,h2,h3,h4{line-height:1.2;margin:0 0 .4em}
+h1{font-size:1.9rem;letter-spacing:-.01em}
+h2{font-size:1.25rem}
+h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--pg-muted);margin-top:1.6rem}
+p{margin:.4em 0}
+small{font-weight:normal}
+.wrap{max-width:1720px;margin:0 auto;padding:28px 24px 48px}
+header.page{border-bottom:1px solid var(--pg-line);padding-bottom:20px;margin-bottom:24px}
+header.page p{max-width:72ch;color:var(--pg-muted)}
+header.page .pick{color:var(--pg-fg);font-weight:600}
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:24px;align-items:start}
+article.identity{background:var(--pg-card);border:1px solid var(--pg-line);border-radius:10px;padding:20px 20px 24px;min-width:0;overflow:hidden}
+article.identity>header h2{font-size:1.35rem}
+article.identity>header p{color:var(--pg-muted);margin-top:0}
+
+/* Two-theme specimen panels ------------------------------------------------ */
+.pair2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.panel{background:var(--surface);color:var(--text);border-radius:8px;padding:12px;min-width:0;position:relative}
+.panel::before{content:attr(data-theme);position:absolute;top:6px;right:10px;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.light{--line:rgba(0,0,0,.10)} .dark{--line:rgba(255,255,255,.14)}
+
+/* Identity palettes. Generated from one source together with the contrast
+   table below, so swatch, specimen and ratio cannot drift apart. -------- */
+.id-a .light{--surface:#FBF7F0; --raised:#FFFFFF; --text:#1F2628; --muted:#5A6367; --primary:#0B6E7C; --on-primary:#FFFFFF; --secondary:#A35D00; --on-secondary:#FFFFFF; --success:#1B7F4A; --warning:#B4500B; --error:#B3261E; --info:#0B6E7C; --on-state:#FFFFFF;}
+.id-a .dark{--surface:#15191B; --raised:#1F2528; --text:#F3EEE4; --muted:#A9B0B3; --primary:#4FC1CF; --on-primary:#0B2A2F; --secondary:#F2A93B; --on-secondary:#2A1B00; --success:#5CCB8F; --warning:#F08A4B; --error:#F07167; --info:#4FC1CF; --on-state:#15191B;}
+.id-b .light{--surface:#F4F5F9; --raised:#FFFFFF; --text:#15161D; --muted:#585C6B; --primary:#6330E0; --on-primary:#FFFFFF; --secondary:#4D7A00; --on-secondary:#FFFFFF; --success:#2E7D32; --warning:#8A6A00; --error:#C2185B; --info:#6330E0; --on-state:#FFFFFF;}
+.id-b .dark{--surface:#0E0F15; --raised:#181A24; --text:#F2F2F8; --muted:#A3A6B8; --primary:#A58BFF; --on-primary:#1B0A4D; --secondary:#B9F73E; --on-secondary:#1A2600; --success:#58D68D; --warning:#F5C542; --error:#FF6FB5; --info:#A58BFF; --on-state:#0E0F15;}
+.id-c .light{--surface:#F6F1E6; --raised:#FFFDF8; --text:#17160F; --muted:#5A574B; --primary:#E8B11B; --on-primary:#17160F; --primary-text:#7A5A00; --secondary:#4A5560; --on-secondary:#FFFFFF; --success:#2F6B3A; --warning:#9A4A00; --error:#9B2C2C; --info:#4A5560; --on-state:#FFFFFF;}
+.id-c .dark{--surface:#171612; --raised:#23211B; --text:#F2ECDD; --muted:#B3AC99; --primary:#E8B11B; --on-primary:#17160F; --secondary:#9AA5B0; --on-secondary:#17160F; --success:#84C77A; --warning:#E8894A; --error:#F07A78; --info:#9AA5B0; --on-state:#171612;}
+
+/* Marks ------------------------------------------------------------------- */
+.markrow{display:flex;align-items:center;gap:16px;margin-top:6px}
+.mark{display:block}
+.mark-bare{color:var(--primary);width:96px;height:72px}
+.id-c .light .mark-bare{color:var(--text)}
+.badge{width:56px;height:56px;border-radius:14px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;flex:none}
+.badge .mark{width:40px;height:30px}
+.id-b .badge{border-radius:0;clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px)}
+.id-c .badge{border-radius:4px;box-shadow:inset 0 0 0 2px var(--on-primary)}
+.id-c .dark .badge{box-shadow:none}
+.caption{font-size:.8rem;color:var(--muted);margin:4px 0 0}
+
+/* Swatches ---------------------------------------------------------------- */
+ul.swatches{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+ul.swatches li{display:flex;flex-direction:column;gap:2px;font-size:.68rem;line-height:1.25}
+ul.swatches .chip{display:block;height:26px;border-radius:5px;border:1px solid var(--line)}
+.id-b ul.swatches .chip{border-radius:0}
+.id-c ul.swatches .chip{border-radius:2px}
+ul.swatches .tok{color:var(--text);font-weight:600}
+ul.swatches code{color:var(--muted);font-size:.66rem}
+
+/* Trophy states ----------------------------------------------------------- */
+.states{display:flex;gap:14px;margin-top:10px;align-items:flex-end}
+.state{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.66rem;color:var(--muted)}
+.state svg{width:28px;height:28px;display:block}
+.state .locked{color:var(--muted)}
+.state .progress{color:var(--warning)}
+.state .unlocked{color:var(--secondary)}
+.id-c .state .unlocked{color:var(--primary)}
+.id-c .light .state .unlocked svg{filter:drop-shadow(0 0 0 var(--text))}
+
+/* Icons ------------------------------------------------------------------- */
+.icons{display:flex;gap:18px;margin-top:8px;align-items:center}
+.icons svg{width:36px;height:36px;display:block;color:var(--text)}
+.icons figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.66rem;color:var(--muted)}
+.line svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fill svg{fill:currentColor;stroke:none}
+.heavy svg{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:square;stroke-linejoin:miter}
+
+/* Motion ------------------------------------------------------------------ */
+.motion{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;margin-top:8px}
+.plot{width:132px;height:110px;display:block;color:var(--text)}
+.plot .axis{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+.plot .curve{stroke:var(--primary);stroke-width:2.5;fill:none}
+.id-c .light .plot .curve{stroke:var(--primary-text)}
+.plot text{font-size:7px;fill:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.demo{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.demo-tile{appearance:none;border:0;cursor:default;width:72px;height:72px;border-radius:14px;background:var(--raised);color:var(--text);border:1px solid var(--line);font:inherit;font-size:.7rem;display:grid;place-items:center;transition-property:transform,box-shadow;transition-timing-function:var(--ease);transition-duration:var(--dur)}
+.demo-tile:focus-visible{outline:none}
+.id-a .demo-tile{--ease:cubic-bezier(0.34,1.4,0.64,1);--dur:180ms}
+.id-a .demo-tile:hover,.id-a .demo-tile:focus-visible{transform:translateY(-4px) scale(1.08);box-shadow:0 0 0 3px var(--primary)}
+.id-b .demo-tile{--ease:cubic-bezier(0.2,0,0,1);--dur:110ms;border-radius:0;clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px)}
+.id-b .demo-tile:hover,.id-b .demo-tile:focus-visible{transform:scale(1.05);box-shadow:inset 0 0 0 3px var(--primary)}
+.id-c .demo-tile{--ease:cubic-bezier(0.16,1,0.3,1);--dur:260ms;border-radius:3px;border:2px solid var(--text)}
+.id-c .demo-tile:hover,.id-c .demo-tile:focus-visible{transform:translateY(-6px) scale(1.03);box-shadow:4px 4px 0 0 var(--primary)}
+.demo p{margin:0;font-size:.78rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){
+  .demo-tile{transition:none}
+}
+
+/* In-context strip -------------------------------------------------------- */
+.strip{border-radius:8px;padding:10px 12px 10px;background:var(--surface);color:var(--text);display:flex;flex-direction:column;gap:10px;border:1px solid var(--line)}
+.strip .bar{display:flex;align-items:center;justify-content:space-between;font-size:.72rem;color:var(--muted)}
+.strip .bar .logo{width:28px;height:22px;color:var(--primary)}
+.id-c .light .strip .bar .logo{color:var(--text)}
+.strip .bar .clock{display:flex;align-items:center;gap:6px}
+.strip .bar .clock i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success)}
+.strip ul.tiles{list-style:none;margin:0;padding:2px 0 0;display:flex;gap:10px;overflow:hidden}
+.strip .tile{flex:none;width:56px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.6rem;color:var(--muted);text-align:center}
+.strip .tile i{display:block;width:44px;height:44px;background:var(--raised);border:1px solid var(--line);border-radius:12px}
+.strip .tile.is-focused{color:var(--text);font-weight:600}
+.id-a .strip .tile.is-focused i{box-shadow:0 0 0 3px var(--primary);background:var(--primary);border-color:transparent}
+.id-b .strip .tile i{border-radius:0;clip-path:polygon(5px 0,calc(100% - 5px) 0,100% 5px,100% calc(100% - 5px),calc(100% - 5px) 100%,5px 100%,0 calc(100% - 5px),0 5px)}
+.id-b .strip .tile.is-focused i{box-shadow:inset 0 0 0 3px var(--primary);background:var(--raised)}
+.id-c .strip .tile i{border-radius:3px;border:2px solid var(--text)}
+.id-c .strip .tile.is-focused i{background:var(--primary);box-shadow:3px 3px 0 0 var(--text)}
+.id-c .dark .strip .tile i{border-color:var(--muted)}
+.id-c .dark .strip .tile.is-focused i{border-color:var(--primary);box-shadow:3px 3px 0 0 var(--primary);background:transparent}
+.strip .foot{display:flex;align-items:center;justify-content:space-between}
+.strip .rail{display:flex;gap:8px;list-style:none;margin:0;padding:0}
+.strip .rail li{width:22px;height:22px;border-radius:50%;border:2px solid var(--muted)}
+.strip .rail li.is-active{background:var(--primary);border-color:var(--primary)}
+.id-c .light .strip .rail li.is-active{border-color:var(--text)}
+.strip .hints{font-size:.62rem;color:var(--muted);display:flex;gap:10px}
+.strip kbd{font:inherit;font-weight:700;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;margin-right:3px}
+.id-b .strip kbd{border-radius:0}
+.id-c .strip kbd{border-radius:2px}
+
+/* Contrast table ---------------------------------------------------------- */
+.table-wrap{overflow-x:auto;margin-top:8px}
+table.contrast{border-collapse:collapse;width:100%;font-size:.74rem}
+table.contrast caption{text-align:left;font-size:.78rem;color:var(--pg-muted);padding:0 0 6px}
+table.contrast th,table.contrast td{text-align:left;padding:4px 6px;border-top:1px solid var(--pg-line);white-space:nowrap;vertical-align:middle}
+table.contrast thead th{border-top:0;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--pg-muted)}
+table.contrast th[scope=row]{font-weight:500;white-space:normal;min-width:150px}
+table.contrast th[scope=row] small{display:block;color:var(--pg-muted);font-size:.66rem}
+table.contrast tr.ui th[scope=row]{font-style:italic}
+table.contrast td .pair{display:inline-block;vertical-align:middle;margin-right:6px}
+table.contrast td .pair i{display:inline-grid;place-items:center;width:26px;height:20px;border-radius:4px;font-style:normal;font-size:.7rem;font-weight:600;border:1px solid var(--pg-line)}
+table.contrast td.pass{color:var(--pg-pass-fg);background:var(--pg-pass-bg);font-weight:600}
+table.contrast td.note{color:var(--pg-note-fg);background:var(--pg-note-bg);font-weight:600}
+table.contrast td.fail{color:var(--pg-fail-fg);background:var(--pg-fail-bg);font-weight:600}
+.footnote{font-size:.76rem;color:var(--pg-muted);margin-top:8px}
+
+footer.page{border-top:1px solid var(--pg-line);margin-top:36px;padding-top:20px;color:var(--pg-muted);font-size:.88rem}
+footer.page p{max-width:90ch}
+footer.page strong{color:var(--pg-fg)}
+
+:focus-visible{outline:3px solid #1A73E8;outline-offset:2px}
+.demo-tile:focus-visible{outline:none}
+@media (max-width:520px){.pair2{grid-template-columns:1fr}.motion{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page">
+  <h1>Console identity proposals</h1>
+  <p>Phase 0a · three complete, distinct identities for the portfolio's console shell. Each column is a whole identity: the <strong>KJ</strong> mark, an accent palette with semantic states in light and dark themes, an icon direction with three sample icons drawn from scratch, a motion curve with a named easing and duration range, and a one-line boot chime concept.</p>
+  <p>Specimens are shown in both themes side by side; nothing on this page toggles. The contrast table at the end of each column reports every text-on-surface pair against WCAG 2.2 AA — 4.5:1 for text, and 3:1 for non-text components as an informative extra. Everything here is original work; see the note at the end of the page.</p>
+  <p class="pick">To pick: reply with A, B, or C.</p>
+</header>
+
+<main>
+<section class="compare" aria-label="Three identity proposals side by side">
+
+<!-- ============================================================ A ==== -->
+<article class="identity id-a" id="identity-a" aria-labelledby="h-a">
+  <header>
+    <h2 id="h-a">A · Warm &amp; rounded</h2>
+    <p>Soft geometry, warm neutrals, teal and amber. Friendly and approachable — the shell reads as a companion, not a machine.</p>
+  </header>
+
+  <h3>Mark</h3>
+  <div class="pair2">
+    <div class="panel light" data-theme="light">
+      <div class="markrow">
+        <svg class="mark mark-bare" viewBox="0 0 64 64" role="img" aria-labelledby="a-mark-l"><title id="a-mark-l">KJ monogram, identity A, on the light surface</title><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v44"/><path d="M12 34l22-22"/><path d="M12 34l18 18"/><path d="M52 10v30a12 12 0 0 1-12 12h-10"/></g></svg>
+        <span class="badge" role="img" aria-label="KJ monogram, identity A, as a tile badge on the light surface"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v44"/><path d="M12 34l22-22"/><path d="M12 34l18 18"/><path d="M52 10v30a12 12 0 0 1-12 12h-10"/></g></svg></span>
+      </div>
+    </div>
+    <div class="panel dark" data-theme="dark">
+      <div class="markrow">
+        <svg class="mark mark-bare" viewBox="0 0 64 64" role="img" aria-labelledby="a-mark-d"><title id="a-mark-d">KJ monogram, identity A, on the dark surface</title><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v44"/><path d="M12 34l22-22"/><path d="M12 34l18 18"/><path d="M52 10v30a12 12 0 0 1-12 12h-10"/></g></svg>
+        <span class="badge" role="img" aria-label="KJ monogram, identity A, as a tile badge on the dark surface"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v44"/><path d="M12 34l22-22"/><path d="M12 34l18 18"/><path d="M52 10v30a12 12 0 0 1-12 12h-10"/></g></svg></span>
+      </div>
+    </div>
+  </div>
+  <p class="caption">One continuous rounded stroke: the K's lower leg runs straight into the J's hook, so the two letters share a terminal. Pills and quarter-arcs on a 4-unit grid, 10-unit stroke, round terminals. Holds at 24&nbsp;px in the status bar.</p>
+
+  <h3>Palette</h3>
+  <div class="pair2">
+    <div class="panel light" data-theme="light">
+<ul class="swatches light" aria-label="A · Warm & rounded light theme palette">
+  <li><span class="chip" style="background:#0B6E7C"></span><span class="tok">primary</span><code>#0B6E7C</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">on-primary</span><code>#FFFFFF</code></li>
+  <li><span class="chip" style="background:#A35D00"></span><span class="tok">secondary</span><code>#A35D00</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">on-secondary</span><code>#FFFFFF</code></li>
+  <li><span class="chip" style="background:#FBF7F0"></span><span class="tok">surface</span><code>#FBF7F0</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">surface-raised</span><code>#FFFFFF</code></li>
+  <li><span class="chip" style="background:#1F2628"></span><span class="tok">text</span><code>#1F2628</code></li>
+  <li><span class="chip" style="background:#5A6367"></span><span class="tok">text-muted</span><code>#5A6367</code></li>
+  <li><span class="chip" style="background:#1B7F4A"></span><span class="tok">success</span><code>#1B7F4A</code></li>
+  <li><span class="chip" style="background:#B4500B"></span><span class="tok">warning</span><code>#B4500B</code></li>
+  <li><span class="chip" style="background:#B3261E"></span><span class="tok">error</span><code>#B3261E</code></li>
+  <li><span class="chip" style="background:#0B6E7C"></span><span class="tok">info</span><code>#0B6E7C</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">on-state</span><code>#FFFFFF</code></li>
+</ul>
+      <div class="states line" aria-label="Trophy states, light theme">
+        <span class="state"><span class="locked"><svg viewBox="0 0 24 24" role="img" aria-label="Locked trophy: muted outline"><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H5a1.5 1.5 0 0 0 0 3h2"/><path d="M17 6h2a1.5 1.5 0 0 1 0 3h-2"/><path d="M12 15v3"/><path d="M8.5 20h7"/></svg></span>locked</span>
+        <span class="state"><span class="progress"><svg viewBox="0 0 24 24" role="img" aria-label="In-progress trophy: warning outline"><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H5a1.5 1.5 0 0 0 0 3h2"/><path d="M17 6h2a1.5 1.5 0 0 1 0 3h-2"/><path d="M12 15v3"/><path d="M8.5 20h7"/></svg></span>in progress</span>
+        <span class="state"><span class="unlocked"><svg viewBox="0 0 24 24" role="img" aria-label="Unlocked trophy: secondary fill"><path d="M7 4h10v6a5 5 0 0 1-10 0z" fill="currentColor"/><path d="M7 6H5a1.5 1.5 0 0 0 0 3h2"/><path d="M17 6h2a1.5 1.5 0 0 1 0 3h-2"/><path d="M12 15v3"/><path d="M8.5 20h7"/></svg></span>unlocked</span>
+      </div>
+    </div>
+    <div class="panel dark" data-theme="dark">
+<ul class="swatches dark" aria-label="A · Warm & rounded dark theme palette">
+  <li><span class="chip" style="background:#4FC1CF"></span><span class="tok">primary</span><code>#4FC1CF</code></li>
+  <li><span class="chip" style="background:#0B2A2F"></span><span class="tok">on-primary</span><code>#0B2A2F</code></li>
+  <li><span class="chip" style="background:#F2A93B"></span><span class="tok">secondary</span><code>#F2A93B</code></li>
+  <li><span class="chip" style="background:#2A1B00"></span><span class="tok">on-secondary</span><code>#2A1B00</code></li>
+  <li><span class="chip" style="background:#15191B"></span><span class="tok">surface</span><code>#15191B</code></li>
+  <li><span class="chip" style="background:#1F2528"></span><span class="tok">surface-raised</span><code>#1F2528</code></li>
+  <li><span class="chip" style="background:#F3EEE4"></span><span class="tok">text</span><code>#F3EEE4</code></li>
+  <li><span class="chip" style="background:#A9B0B3"></span><span class="tok">text-muted</span><code>#A9B0B3</code></li>
+  <li><span class="chip" style="background:#5CCB8F"></span><span class="tok">success</span><code>#5CCB8F</code></li>
+  <li><span class="chip" style="background:#F08A4B"></span><span class="tok">warning</span><code>#F08A4B</code></li>
+  <li><span class="chip" style="background:#F07167"></span><span class="tok">error</span><code>#F07167</code></li>
+  <li><span class="chip" style="background:#4FC1CF"></span><span class="tok">info</span><code>#4FC1CF</code></li>
+  <li><span class="chip" style="background:#15191B"></span><span class="tok">on-state</span><code>#15191B</code></li>
+</ul>
+      <div class="states line" aria-label="Trophy states, dark theme">
+        <span class="state"><span class="locked"><svg viewBox="0 0 24 24" role="img" aria-label="Locked trophy: muted outline"><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H5a1.5 1.5 0 0 0 0 3h2"/><path d="M17 6h2a1.5 1.5 0 0 1 0 3h-2"/><path d="M12 15v3"/><path d="M8.5 20h7"/></svg></span>locked</span>
+        <span class="state"><span class="progress"><svg viewBox="0 0 24 24" role="img" aria-label="In-progress trophy: warning outline"><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H5a1.5 1.5 0 0 0 0 3h2"/><path d="M17 6h2a1.5 1.5 0 0 1 0 3h-2"/><path d="M12 15v3"/><path d="M8.5 20h7"/></svg></span>in progress</span>
+        <span class="state"><span class="unlocked"><svg viewBox="0 0 24 24" role="img" aria-label="Unlocked trophy: secondary fill"><path d="M7 4h10v6a5 5 0 0 1-10 0z" fill="currentColor"/><path d="M7 6H5a1.5 1.5 0 0 0 0 3h2"/><path d="M17 6h2a1.5 1.5 0 0 1 0 3h-2"/><path d="M12 15v3"/><path d="M8.5 20h7"/></svg></span>unlocked</span>
+      </div>
+    </div>
+  </div>
+  <p class="caption">Teal carries focus, links and info; amber is the reward colour — an unlocked trophy is amber, a completed certification is amber. Warm neutrals throughout. The light-theme amber is deepened so it passes as text; the dark-theme amber is the vivid one.</p>
+
+  <h3>Icon direction</h3>
+  <div class="pair2">
+    <div class="panel light line" data-theme="light">
+      <div class="icons">
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="a-ic1l"><title id="a-ic1l">Trophy icon, identity A</title><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H5a1.5 1.5 0 0 0 0 3h2"/><path d="M17 6h2a1.5 1.5 0 0 1 0 3h-2"/><path d="M12 15v3"/><path d="M8.5 20h7"/></svg><figcaption>trophy</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="a-ic2l"><title id="a-ic2l">Settings gear icon, identity A</title><path d="M10.26 5.01 L10.68 2.59 L13.32 2.59 L13.74 5.01 L15.71 5.83 L17.72 4.41 L19.59 6.28 L18.17 8.29 L18.99 10.26 L21.41 10.68 L21.41 13.32 L18.99 13.74 L18.17 15.71 L19.59 17.72 L17.72 19.59 L15.71 18.17 L13.74 18.99 L13.32 21.41 L10.68 21.41 L10.26 18.99 L8.29 18.17 L6.28 19.59 L4.41 17.72 L5.83 15.71 L5.01 13.74 L2.59 13.32 L2.59 10.68 L5.01 10.26 L5.83 8.29 L4.41 6.28 L6.28 4.41 L8.29 5.83Z"/><circle cx="12" cy="12" r="3"/></svg><figcaption>settings</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="a-ic3l"><title id="a-ic3l">Play-activity bars icon, identity A</title><path d="M4.5 19v-5"/><path d="M9.5 19V8"/><path d="M14.5 19v-8"/><path d="M19.5 19V5"/></svg><figcaption>activity</figcaption></figure>
+      </div>
+    </div>
+    <div class="panel dark line" data-theme="dark">
+      <div class="icons">
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="a-ic1d"><title id="a-ic1d">Trophy icon, identity A, dark</title><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H5a1.5 1.5 0 0 0 0 3h2"/><path d="M17 6h2a1.5 1.5 0 0 1 0 3h-2"/><path d="M12 15v3"/><path d="M8.5 20h7"/></svg><figcaption>trophy</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="a-ic2d"><title id="a-ic2d">Settings gear icon, identity A, dark</title><path d="M10.26 5.01 L10.68 2.59 L13.32 2.59 L13.74 5.01 L15.71 5.83 L17.72 4.41 L19.59 6.28 L18.17 8.29 L18.99 10.26 L21.41 10.68 L21.41 13.32 L18.99 13.74 L18.17 15.71 L19.59 17.72 L17.72 19.59 L15.71 18.17 L13.74 18.99 L13.32 21.41 L10.68 21.41 L10.26 18.99 L8.29 18.17 L6.28 19.59 L4.41 17.72 L5.83 15.71 L5.01 13.74 L2.59 13.32 L2.59 10.68 L5.01 10.26 L5.83 8.29 L4.41 6.28 L6.28 4.41 L8.29 5.83Z"/><circle cx="12" cy="12" r="3"/></svg><figcaption>settings</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="a-ic3d"><title id="a-ic3d">Play-activity bars icon, identity A, dark</title><path d="M4.5 19v-5"/><path d="M9.5 19V8"/><path d="M14.5 19v-8"/><path d="M19.5 19V5"/></svg><figcaption>activity</figcaption></figure>
+      </div>
+    </div>
+  </div>
+  <p class="caption">2&nbsp;px monoline on a 24&nbsp;px grid, round caps and joins, 3&nbsp;px inner corner radius. Outlines only; fills appear only to express state.</p>
+
+  <h3>Motion</h3>
+  <div class="panel light" data-theme="light">
+    <div class="motion">
+      <svg class="plot" viewBox="0 0 120 100" role="img" aria-labelledby="a-plot"><title id="a-plot">Easing plot for Spring-lite, cubic-bezier 0.34, 1.4, 0.64, 1 — rises past the target and settles back</title><line class="axis" x1="8" y1="80.25" x2="112" y2="80.25"/><line class="axis" x1="8" y1="25.25" x2="112" y2="25.25"/><text x="9" y="78">0</text><text x="9" y="23">1</text><path class="curve" d="M8 80.25 C43.36 3.25 74.56 25.25 112 25.25"/></svg>
+      <div class="demo">
+        <button type="button" class="demo-tile" aria-label="Motion demo for identity A: hover or focus to see the Spring-lite curve">hover / focus</button>
+        <p><strong>Spring-lite</strong> — <code>cubic-bezier(0.34, 1.4, 0.64, 1)</code>, 120–220&nbsp;ms. A small overshoot on focus and tile selection, then a decelerating settle. Reduced motion: instant state change, no overshoot.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Chime</h3>
+  <p>Two ascending marimba notes a soft fifth apart, under half a second, with a warm room tail.</p>
+
+  <h3>In context</h3>
+  <div class="stack">
+    <div class="strip light" data-theme="light" role="img" aria-label="Identity A in context, light theme: status bar with the KJ mark top-left and a clock top-right, a row of rounded tiles with the first one focused in teal, a rail of circular utility buttons, and A Select / B Back hints">
+      <div class="bar"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v44"/><path d="M12 34l22-22"/><path d="M12 34l18 18"/><path d="M52 10v30a12 12 0 0 1-12 12h-10"/></g></svg><span class="clock"><i></i>12:00</span></div>
+      <ul class="tiles"><li class="tile is-focused"><i></i>Experience</li><li class="tile"><i></i>Projects</li><li class="tile"><i></i>Certifications</li><li class="tile"><i></i>Education</li><li class="tile"><i></i>Hobbies</li><li class="tile"><i></i>Now</li></ul>
+      <div class="foot"><ul class="rail"><li class="is-active"></li><li></li><li></li><li></li><li></li></ul><span class="hints"><span><kbd>A</kbd>Select</span><span><kbd>B</kbd>Back</span></span></div>
+    </div>
+    <div class="strip dark" data-theme="dark" role="img" aria-label="Identity A in context, dark theme: the same layout on the warm dark surface">
+      <div class="bar"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v44"/><path d="M12 34l22-22"/><path d="M12 34l18 18"/><path d="M52 10v30a12 12 0 0 1-12 12h-10"/></g></svg><span class="clock"><i></i>12:00</span></div>
+      <ul class="tiles"><li class="tile is-focused"><i></i>Experience</li><li class="tile"><i></i>Projects</li><li class="tile"><i></i>Certifications</li><li class="tile"><i></i>Education</li><li class="tile"><i></i>Hobbies</li><li class="tile"><i></i>Now</li></ul>
+      <div class="foot"><ul class="rail"><li class="is-active"></li><li></li><li></li><li></li><li></li></ul><span class="hints"><span><kbd>A</kbd>Select</span><span><kbd>B</kbd>Back</span></span></div>
+    </div>
+  </div>
+  <p class="caption">Flat layout grammar only — status bar, tile row, utility rail, button hints. Not a device.</p>
+
+  <h3>Contrast — WCAG 2.2 AA</h3>
+  <div class="table-wrap">
+  <table class="contrast">
+    <caption>Identity A. Every text pair passes 4.5:1 in both themes.</caption>
+    <thead><tr><th scope="col">Pair <small>AA threshold</small></th><th scope="col" colspan="2">Light</th><th scope="col" colspan="2">Dark</th></tr></thead>
+<tbody>
+<tr><th scope="row">Text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#1F2628">Aa</i></span>14.39:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#F3EEE4">Aa</i></span>15.30:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Muted text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#5A6367">Aa</i></span>5.76:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#A9B0B3">Aa</i></span>8.05:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Text on raised surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FFFFFF;color:#1F2628">Aa</i></span>15.37:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#1F2528;color:#F3EEE4">Aa</i></span>13.42:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Muted text on raised surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FFFFFF;color:#5A6367">Aa</i></span>6.15:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#1F2528;color:#A9B0B3">Aa</i></span>7.05:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Primary as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#0B6E7C">Aa</i></span>5.56:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#4FC1CF">Aa</i></span>8.31:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-primary text on primary fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#0B6E7C;color:#FFFFFF">Aa</i></span>5.94:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#4FC1CF;color:#0B2A2F">Aa</i></span>7.11:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Secondary as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#A35D00">Aa</i></span>4.77:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#F2A93B">Aa</i></span>8.86:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-secondary text on secondary fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#A35D00;color:#FFFFFF">Aa</i></span>5.09:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#F2A93B;color:#2A1B00">Aa</i></span>8.38:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Success as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#1B7F4A">Aa</i></span>4.70:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#5CCB8F">Aa</i></span>8.76:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on success fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#1B7F4A;color:#FFFFFF">Aa</i></span>5.02:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#5CCB8F;color:#15191B">Aa</i></span>8.76:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Warning as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#B4500B">Aa</i></span>4.80:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#F08A4B">Aa</i></span>7.11:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on warning fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#B4500B;color:#FFFFFF">Aa</i></span>5.13:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#F08A4B;color:#15191B">Aa</i></span>7.11:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Error as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#B3261E">Aa</i></span>6.12:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#F07167">Aa</i></span>6.12:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on error fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#B3261E;color:#FFFFFF">Aa</i></span>6.54:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#F07167;color:#15191B">Aa</i></span>6.12:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Info as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#0B6E7C">Aa</i></span>5.56:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#4FC1CF">Aa</i></span>8.31:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on info fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#0B6E7C;color:#FFFFFF">Aa</i></span>5.94:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#4FC1CF;color:#15191B">Aa</i></span>8.31:1</td><td class="pass">AA</td></tr>
+<tr class="ui"><th scope="row">Primary fill vs surface (non-text, 1.4.11)<small>3:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#0B6E7C">Aa</i></span>5.56:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#4FC1CF">Aa</i></span>8.31:1</td><td class="pass">AA</td></tr>
+<tr class="ui"><th scope="row">Secondary fill vs surface (non-text, 1.4.11)<small>3:1</small></th><td><span class="pair"><i style="background:#FBF7F0;color:#A35D00">Aa</i></span>4.77:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#15191B;color:#F2A93B">Aa</i></span>8.86:1</td><td class="pass">AA</td></tr>
+</tbody>
+  </table>
+  </div>
+</article>
+
+<!-- ============================================================ B ==== -->
+<article class="identity id-b" id="identity-b" aria-labelledby="h-b">
+  <header>
+    <h2 id="h-b">B · Electric &amp; crisp</h2>
+    <p>Cool neutrals, violet and lime, hard edges. Arcade-precise — everything snaps, nothing eases in.</p>
+  </header>
+
+  <h3>Mark</h3>
+  <div class="pair2">
+    <div class="panel light" data-theme="light">
+      <div class="markrow">
+        <svg class="mark mark-bare" viewBox="0 0 88 64" role="img" aria-labelledby="b-mark-l"><title id="b-mark-l">KJ monogram, identity B, on the light surface</title><path fill="currentColor" d="M4 6.5 L6.5 4 L11 4 L11 11 L4 11Z M36 4 L40.5 4 L43 6.5 L43 11 L36 11Z M4 12 L11 12 L11 19 L4 19Z M28 12 L35 12 L35 19 L28 19Z M4 20 L11 20 L11 27 L4 27Z M20 20 L27 20 L27 27 L20 27Z M4 28 L11 28 L11 35 L4 35Z M12 28 L19 28 L19 35 L12 35Z M4 36 L11 36 L11 43 L4 43Z M20 36 L27 36 L27 43 L20 43Z M4 44 L11 44 L11 51 L4 51Z M28 44 L35 44 L35 51 L28 51Z M4 52 L11 52 L11 59 L6.5 59 L4 56.5Z M36 52 L43 52 L43 56.5 L40.5 59 L36 59Z M52 6.5 L54.5 4 L59 4 L59 11 L52 11Z M60 4 L67 4 L67 11 L60 11Z M68 4 L75 4 L75 11 L68 11Z M76 4 L80.5 4 L83 6.5 L83 11 L76 11Z M76 12 L83 12 L83 19 L76 19Z M76 20 L83 20 L83 27 L76 27Z M76 28 L83 28 L83 35 L76 35Z M76 36 L83 36 L83 43 L76 43Z M52 46.5 L54.5 44 L59 44 L59 51 L54.5 51 L52 48.5Z M76 44 L83 44 L83 48.5 L80.5 51 L76 51Z M60 52 L67 52 L67 59 L62.5 59 L60 56.5Z M68 52 L75 52 L75 56.5 L72.5 59 L68 59Z"/></svg>
+        <span class="badge" role="img" aria-label="KJ monogram, identity B, as a chamfered tile badge on the light surface"><svg class="mark" viewBox="0 0 88 64" aria-hidden="true"><path fill="currentColor" d="M4 6.5 L6.5 4 L11 4 L11 11 L4 11Z M36 4 L40.5 4 L43 6.5 L43 11 L36 11Z M4 12 L11 12 L11 19 L4 19Z M28 12 L35 12 L35 19 L28 19Z M4 20 L11 20 L11 27 L4 27Z M20 20 L27 20 L27 27 L20 27Z M4 28 L11 28 L11 35 L4 35Z M12 28 L19 28 L19 35 L12 35Z M4 36 L11 36 L11 43 L4 43Z M20 36 L27 36 L27 43 L20 43Z M4 44 L11 44 L11 51 L4 51Z M28 44 L35 44 L35 51 L28 51Z M4 52 L11 52 L11 59 L6.5 59 L4 56.5Z M36 52 L43 52 L43 56.5 L40.5 59 L36 59Z M52 6.5 L54.5 4 L59 4 L59 11 L52 11Z M60 4 L67 4 L67 11 L60 11Z M68 4 L75 4 L75 11 L68 11Z M76 4 L80.5 4 L83 6.5 L83 11 L76 11Z M76 12 L83 12 L83 19 L76 19Z M76 20 L83 20 L83 27 L76 27Z M76 28 L83 28 L83 35 L76 35Z M76 36 L83 36 L83 43 L76 43Z M52 46.5 L54.5 44 L59 44 L59 51 L54.5 51 L52 48.5Z M76 44 L83 44 L83 48.5 L80.5 51 L76 51Z M60 52 L67 52 L67 59 L62.5 59 L60 56.5Z M68 52 L75 52 L75 56.5 L72.5 59 L68 59Z"/></svg></span>
+      </div>
+    </div>
+    <div class="panel dark" data-theme="dark">
+      <div class="markrow">
+        <svg class="mark mark-bare" viewBox="0 0 88 64" role="img" aria-labelledby="b-mark-d"><title id="b-mark-d">KJ monogram, identity B, on the dark surface</title><path fill="currentColor" d="M4 6.5 L6.5 4 L11 4 L11 11 L4 11Z M36 4 L40.5 4 L43 6.5 L43 11 L36 11Z M4 12 L11 12 L11 19 L4 19Z M28 12 L35 12 L35 19 L28 19Z M4 20 L11 20 L11 27 L4 27Z M20 20 L27 20 L27 27 L20 27Z M4 28 L11 28 L11 35 L4 35Z M12 28 L19 28 L19 35 L12 35Z M4 36 L11 36 L11 43 L4 43Z M20 36 L27 36 L27 43 L20 43Z M4 44 L11 44 L11 51 L4 51Z M28 44 L35 44 L35 51 L28 51Z M4 52 L11 52 L11 59 L6.5 59 L4 56.5Z M36 52 L43 52 L43 56.5 L40.5 59 L36 59Z M52 6.5 L54.5 4 L59 4 L59 11 L52 11Z M60 4 L67 4 L67 11 L60 11Z M68 4 L75 4 L75 11 L68 11Z M76 4 L80.5 4 L83 6.5 L83 11 L76 11Z M76 12 L83 12 L83 19 L76 19Z M76 20 L83 20 L83 27 L76 27Z M76 28 L83 28 L83 35 L76 35Z M76 36 L83 36 L83 43 L76 43Z M52 46.5 L54.5 44 L59 44 L59 51 L54.5 51 L52 48.5Z M76 44 L83 44 L83 48.5 L80.5 51 L76 51Z M60 52 L67 52 L67 59 L62.5 59 L60 56.5Z M68 52 L75 52 L75 56.5 L72.5 59 L68 59Z"/></svg>
+        <span class="badge" role="img" aria-label="KJ monogram, identity B, as a chamfered tile badge on the dark surface"><svg class="mark" viewBox="0 0 88 64" aria-hidden="true"><path fill="currentColor" d="M4 6.5 L6.5 4 L11 4 L11 11 L4 11Z M36 4 L40.5 4 L43 6.5 L43 11 L36 11Z M4 12 L11 12 L11 19 L4 19Z M28 12 L35 12 L35 19 L28 19Z M4 20 L11 20 L11 27 L4 27Z M20 20 L27 20 L27 27 L20 27Z M4 28 L11 28 L11 35 L4 35Z M12 28 L19 28 L19 35 L12 35Z M4 36 L11 36 L11 43 L4 43Z M20 36 L27 36 L27 43 L20 43Z M4 44 L11 44 L11 51 L4 51Z M28 44 L35 44 L35 51 L28 51Z M4 52 L11 52 L11 59 L6.5 59 L4 56.5Z M36 52 L43 52 L43 56.5 L40.5 59 L36 59Z M52 6.5 L54.5 4 L59 4 L59 11 L52 11Z M60 4 L67 4 L67 11 L60 11Z M68 4 L75 4 L75 11 L68 11Z M76 4 L80.5 4 L83 6.5 L83 11 L76 11Z M76 12 L83 12 L83 19 L76 19Z M76 20 L83 20 L83 27 L76 27Z M76 28 L83 28 L83 35 L76 35Z M76 36 L83 36 L83 43 L76 43Z M52 46.5 L54.5 44 L59 44 L59 51 L54.5 51 L52 48.5Z M76 44 L83 44 L83 48.5 L80.5 51 L76 51Z M60 52 L67 52 L67 59 L62.5 59 L60 56.5Z M68 52 L75 52 L75 56.5 L72.5 59 L68 59Z"/></svg></span>
+      </div>
+    </div>
+  </div>
+  <p class="caption">KJ on a 5×7 + 4×7 cell grid with 1-unit optical gaps; diagonals stepped at 45°, outer corners chamfered. Reads as a bitmap at 24&nbsp;px and as a pattern at 240&nbsp;px. Own grid — not traced from any bitmap typeface.</p>
+
+  <h3>Palette</h3>
+  <div class="pair2">
+    <div class="panel light" data-theme="light">
+<ul class="swatches light" aria-label="B · Electric & crisp light theme palette">
+  <li><span class="chip" style="background:#6330E0"></span><span class="tok">primary</span><code>#6330E0</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">on-primary</span><code>#FFFFFF</code></li>
+  <li><span class="chip" style="background:#4D7A00"></span><span class="tok">secondary</span><code>#4D7A00</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">on-secondary</span><code>#FFFFFF</code></li>
+  <li><span class="chip" style="background:#F4F5F9"></span><span class="tok">surface</span><code>#F4F5F9</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">surface-raised</span><code>#FFFFFF</code></li>
+  <li><span class="chip" style="background:#15161D"></span><span class="tok">text</span><code>#15161D</code></li>
+  <li><span class="chip" style="background:#585C6B"></span><span class="tok">text-muted</span><code>#585C6B</code></li>
+  <li><span class="chip" style="background:#2E7D32"></span><span class="tok">success</span><code>#2E7D32</code></li>
+  <li><span class="chip" style="background:#8A6A00"></span><span class="tok">warning</span><code>#8A6A00</code></li>
+  <li><span class="chip" style="background:#C2185B"></span><span class="tok">error</span><code>#C2185B</code></li>
+  <li><span class="chip" style="background:#6330E0"></span><span class="tok">info</span><code>#6330E0</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">on-state</span><code>#FFFFFF</code></li>
+</ul>
+      <div class="states fill" aria-label="Trophy states, light theme">
+        <span class="state"><span class="locked"><svg viewBox="0 0 24 24" role="img" aria-label="Locked trophy: muted silhouette"><path d="M6 3h12v6l-3 4H9L6 9z"/><path d="M3 5h2v4H3L2 8V6z"/><path d="M19 5h2l1 1v2l-1 1h-2z"/><path d="M10.5 14.5h3V17h-3z"/><path d="M7 18.5h10l1 1.5v1H6v-1z"/></svg></span>locked</span>
+        <span class="state"><span class="progress"><svg viewBox="0 0 24 24" role="img" aria-label="In-progress trophy: warning silhouette"><path d="M6 3h12v6l-3 4H9L6 9z"/><path d="M3 5h2v4H3L2 8V6z"/><path d="M19 5h2l1 1v2l-1 1h-2z"/><path d="M10.5 14.5h3V17h-3z"/><path d="M7 18.5h10l1 1.5v1H6v-1z"/></svg></span>in progress</span>
+        <span class="state"><span class="unlocked"><svg viewBox="0 0 24 24" role="img" aria-label="Unlocked trophy: secondary silhouette"><path d="M6 3h12v6l-3 4H9L6 9z"/><path d="M3 5h2v4H3L2 8V6z"/><path d="M19 5h2l1 1v2l-1 1h-2z"/><path d="M10.5 14.5h3V17h-3z"/><path d="M7 18.5h10l1 1.5v1H6v-1z"/></svg></span>unlocked</span>
+      </div>
+    </div>
+    <div class="panel dark" data-theme="dark">
+<ul class="swatches dark" aria-label="B · Electric & crisp dark theme palette">
+  <li><span class="chip" style="background:#A58BFF"></span><span class="tok">primary</span><code>#A58BFF</code></li>
+  <li><span class="chip" style="background:#1B0A4D"></span><span class="tok">on-primary</span><code>#1B0A4D</code></li>
+  <li><span class="chip" style="background:#B9F73E"></span><span class="tok">secondary</span><code>#B9F73E</code></li>
+  <li><span class="chip" style="background:#1A2600"></span><span class="tok">on-secondary</span><code>#1A2600</code></li>
+  <li><span class="chip" style="background:#0E0F15"></span><span class="tok">surface</span><code>#0E0F15</code></li>
+  <li><span class="chip" style="background:#181A24"></span><span class="tok">surface-raised</span><code>#181A24</code></li>
+  <li><span class="chip" style="background:#F2F2F8"></span><span class="tok">text</span><code>#F2F2F8</code></li>
+  <li><span class="chip" style="background:#A3A6B8"></span><span class="tok">text-muted</span><code>#A3A6B8</code></li>
+  <li><span class="chip" style="background:#58D68D"></span><span class="tok">success</span><code>#58D68D</code></li>
+  <li><span class="chip" style="background:#F5C542"></span><span class="tok">warning</span><code>#F5C542</code></li>
+  <li><span class="chip" style="background:#FF6FB5"></span><span class="tok">error</span><code>#FF6FB5</code></li>
+  <li><span class="chip" style="background:#A58BFF"></span><span class="tok">info</span><code>#A58BFF</code></li>
+  <li><span class="chip" style="background:#0E0F15"></span><span class="tok">on-state</span><code>#0E0F15</code></li>
+</ul>
+      <div class="states fill" aria-label="Trophy states, dark theme">
+        <span class="state"><span class="locked"><svg viewBox="0 0 24 24" role="img" aria-label="Locked trophy: muted silhouette"><path d="M6 3h12v6l-3 4H9L6 9z"/><path d="M3 5h2v4H3L2 8V6z"/><path d="M19 5h2l1 1v2l-1 1h-2z"/><path d="M10.5 14.5h3V17h-3z"/><path d="M7 18.5h10l1 1.5v1H6v-1z"/></svg></span>locked</span>
+        <span class="state"><span class="progress"><svg viewBox="0 0 24 24" role="img" aria-label="In-progress trophy: warning silhouette"><path d="M6 3h12v6l-3 4H9L6 9z"/><path d="M3 5h2v4H3L2 8V6z"/><path d="M19 5h2l1 1v2l-1 1h-2z"/><path d="M10.5 14.5h3V17h-3z"/><path d="M7 18.5h10l1 1.5v1H6v-1z"/></svg></span>in progress</span>
+        <span class="state"><span class="unlocked"><svg viewBox="0 0 24 24" role="img" aria-label="Unlocked trophy: secondary silhouette"><path d="M6 3h12v6l-3 4H9L6 9z"/><path d="M3 5h2v4H3L2 8V6z"/><path d="M19 5h2l1 1v2l-1 1h-2z"/><path d="M10.5 14.5h3V17h-3z"/><path d="M7 18.5h10l1 1.5v1H6v-1z"/></svg></span>unlocked</span>
+      </div>
+    </div>
+  </div>
+  <p class="caption">Violet carries focus, links and info; lime is the reward colour. Cool neutrals with a slight blue-grey cast in the darks. Light-theme lime is deepened to olive so it passes as text; dark-theme lime is the electric one.</p>
+
+  <h3>Icon direction</h3>
+  <div class="pair2">
+    <div class="panel light fill" data-theme="light">
+      <div class="icons">
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="b-ic1l"><title id="b-ic1l">Trophy icon, identity B</title><path d="M6 3h12v6l-3 4H9L6 9z"/><path d="M3 5h2v4H3L2 8V6z"/><path d="M19 5h2l1 1v2l-1 1h-2z"/><path d="M10.5 14.5h3V17h-3z"/><path d="M7 18.5h10l1 1.5v1H6v-1z"/></svg><figcaption>trophy</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="b-ic2l"><title id="b-ic2l">Settings gear icon, identity B</title><path fill-rule="evenodd" d="M9.68 4.87 L9.64 1.77 L14.36 1.77 L14.32 4.87 L17.02 6.43 L19.68 4.84 L22.04 8.93 L19.34 10.44 L19.34 13.56 L22.04 15.07 L19.68 19.16 L17.02 17.57 L14.32 19.13 L14.36 22.23 L9.64 22.23 L9.68 19.13 L6.98 17.57 L4.32 19.16 L1.96 15.07 L4.66 13.56 L4.66 10.44 L1.96 8.93 L4.32 4.84 L6.98 6.43Z M12 8.5l3 1.75v3.5l-3 1.75-3-1.75v-3.5z"/></svg><figcaption>settings</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="b-ic3l"><title id="b-ic3l">Play-activity bars icon, identity B</title><path d="M2.5 21V14l1-1h3v8z"/><path d="M8 21V7l1-1h3v15z"/><path d="M13.5 21V10l1-1h3v12z"/><path d="M19 21V4l1-1h3v18z"/></svg><figcaption>activity</figcaption></figure>
+      </div>
+    </div>
+    <div class="panel dark fill" data-theme="dark">
+      <div class="icons">
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="b-ic1d"><title id="b-ic1d">Trophy icon, identity B, dark</title><path d="M6 3h12v6l-3 4H9L6 9z"/><path d="M3 5h2v4H3L2 8V6z"/><path d="M19 5h2l1 1v2l-1 1h-2z"/><path d="M10.5 14.5h3V17h-3z"/><path d="M7 18.5h10l1 1.5v1H6v-1z"/></svg><figcaption>trophy</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="b-ic2d"><title id="b-ic2d">Settings gear icon, identity B, dark</title><path fill-rule="evenodd" d="M9.68 4.87 L9.64 1.77 L14.36 1.77 L14.32 4.87 L17.02 6.43 L19.68 4.84 L22.04 8.93 L19.34 10.44 L19.34 13.56 L22.04 15.07 L19.68 19.16 L17.02 17.57 L14.32 19.13 L14.36 22.23 L9.64 22.23 L9.68 19.13 L6.98 17.57 L4.32 19.16 L1.96 15.07 L4.66 13.56 L4.66 10.44 L1.96 8.93 L4.32 4.84 L6.98 6.43Z M12 8.5l3 1.75v3.5l-3 1.75-3-1.75v-3.5z"/></svg><figcaption>settings</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="b-ic3d"><title id="b-ic3d">Play-activity bars icon, identity B, dark</title><path d="M2.5 21V14l1-1h3v8z"/><path d="M8 21V7l1-1h3v15z"/><path d="M13.5 21V10l1-1h3v12z"/><path d="M19 21V4l1-1h3v18z"/></svg><figcaption>activity</figcaption></figure>
+      </div>
+    </div>
+  </div>
+  <p class="caption">Filled silhouettes on a 24&nbsp;px grid, corners chamfered at 45°, 1&nbsp;px optical gaps between parts instead of outlines. Counters are cut, never stroked.</p>
+
+  <h3>Motion</h3>
+  <div class="panel light" data-theme="light">
+    <div class="motion">
+      <svg class="plot" viewBox="0 0 120 100" role="img" aria-labelledby="b-plot"><title id="b-plot">Easing plot for Hard-snap, cubic-bezier 0.2, 0, 0, 1 — a short hesitation then an abrupt arrival with no overshoot</title><line class="axis" x1="8" y1="80.25" x2="112" y2="80.25"/><line class="axis" x1="8" y1="25.25" x2="112" y2="25.25"/><text x="9" y="78">0</text><text x="9" y="23">1</text><path class="curve" d="M8 80.25 C28.8 80.25 8 25.25 112 25.25"/></svg>
+      <div class="demo">
+        <button type="button" class="demo-tile" aria-label="Motion demo for identity B: hover or focus to see the Hard-snap curve">hover / focus</button>
+        <p><strong>Hard-snap</strong> — <code>cubic-bezier(0.2, 0, 0, 1)</code>, 80–140&nbsp;ms. Near-instant arrivals, no overshoot; focus rings cut rather than fade. Reduced motion: the same end state, zero duration.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Chime</h3>
+  <p>One short square-wave blip with a quick downward pitch tail — dry, no reverb, done in a quarter second.</p>
+
+  <h3>In context</h3>
+  <div class="stack">
+    <div class="strip light" data-theme="light" role="img" aria-label="Identity B in context, light theme: status bar with the KJ mark top-left and a clock top-right, a row of chamfered tiles with the first one focused in violet, a rail of circular utility buttons, and A Select / B Back hints">
+      <div class="bar"><svg class="logo" viewBox="0 0 88 64" aria-hidden="true"><path fill="currentColor" d="M4 6.5 L6.5 4 L11 4 L11 11 L4 11Z M36 4 L40.5 4 L43 6.5 L43 11 L36 11Z M4 12 L11 12 L11 19 L4 19Z M28 12 L35 12 L35 19 L28 19Z M4 20 L11 20 L11 27 L4 27Z M20 20 L27 20 L27 27 L20 27Z M4 28 L11 28 L11 35 L4 35Z M12 28 L19 28 L19 35 L12 35Z M4 36 L11 36 L11 43 L4 43Z M20 36 L27 36 L27 43 L20 43Z M4 44 L11 44 L11 51 L4 51Z M28 44 L35 44 L35 51 L28 51Z M4 52 L11 52 L11 59 L6.5 59 L4 56.5Z M36 52 L43 52 L43 56.5 L40.5 59 L36 59Z M52 6.5 L54.5 4 L59 4 L59 11 L52 11Z M60 4 L67 4 L67 11 L60 11Z M68 4 L75 4 L75 11 L68 11Z M76 4 L80.5 4 L83 6.5 L83 11 L76 11Z M76 12 L83 12 L83 19 L76 19Z M76 20 L83 20 L83 27 L76 27Z M76 28 L83 28 L83 35 L76 35Z M76 36 L83 36 L83 43 L76 43Z M52 46.5 L54.5 44 L59 44 L59 51 L54.5 51 L52 48.5Z M76 44 L83 44 L83 48.5 L80.5 51 L76 51Z M60 52 L67 52 L67 59 L62.5 59 L60 56.5Z M68 52 L75 52 L75 56.5 L72.5 59 L68 59Z"/></svg><span class="clock"><i></i>12:00</span></div>
+      <ul class="tiles"><li class="tile is-focused"><i></i>Experience</li><li class="tile"><i></i>Projects</li><li class="tile"><i></i>Certifications</li><li class="tile"><i></i>Education</li><li class="tile"><i></i>Hobbies</li><li class="tile"><i></i>Now</li></ul>
+      <div class="foot"><ul class="rail"><li class="is-active"></li><li></li><li></li><li></li><li></li></ul><span class="hints"><span><kbd>A</kbd>Select</span><span><kbd>B</kbd>Back</span></span></div>
+    </div>
+    <div class="strip dark" data-theme="dark" role="img" aria-label="Identity B in context, dark theme: the same layout on the cool dark surface">
+      <div class="bar"><svg class="logo" viewBox="0 0 88 64" aria-hidden="true"><path fill="currentColor" d="M4 6.5 L6.5 4 L11 4 L11 11 L4 11Z M36 4 L40.5 4 L43 6.5 L43 11 L36 11Z M4 12 L11 12 L11 19 L4 19Z M28 12 L35 12 L35 19 L28 19Z M4 20 L11 20 L11 27 L4 27Z M20 20 L27 20 L27 27 L20 27Z M4 28 L11 28 L11 35 L4 35Z M12 28 L19 28 L19 35 L12 35Z M4 36 L11 36 L11 43 L4 43Z M20 36 L27 36 L27 43 L20 43Z M4 44 L11 44 L11 51 L4 51Z M28 44 L35 44 L35 51 L28 51Z M4 52 L11 52 L11 59 L6.5 59 L4 56.5Z M36 52 L43 52 L43 56.5 L40.5 59 L36 59Z M52 6.5 L54.5 4 L59 4 L59 11 L52 11Z M60 4 L67 4 L67 11 L60 11Z M68 4 L75 4 L75 11 L68 11Z M76 4 L80.5 4 L83 6.5 L83 11 L76 11Z M76 12 L83 12 L83 19 L76 19Z M76 20 L83 20 L83 27 L76 27Z M76 28 L83 28 L83 35 L76 35Z M76 36 L83 36 L83 43 L76 43Z M52 46.5 L54.5 44 L59 44 L59 51 L54.5 51 L52 48.5Z M76 44 L83 44 L83 48.5 L80.5 51 L76 51Z M60 52 L67 52 L67 59 L62.5 59 L60 56.5Z M68 52 L75 52 L75 56.5 L72.5 59 L68 59Z"/></svg><span class="clock"><i></i>12:00</span></div>
+      <ul class="tiles"><li class="tile is-focused"><i></i>Experience</li><li class="tile"><i></i>Projects</li><li class="tile"><i></i>Certifications</li><li class="tile"><i></i>Education</li><li class="tile"><i></i>Hobbies</li><li class="tile"><i></i>Now</li></ul>
+      <div class="foot"><ul class="rail"><li class="is-active"></li><li></li><li></li><li></li><li></li></ul><span class="hints"><span><kbd>A</kbd>Select</span><span><kbd>B</kbd>Back</span></span></div>
+    </div>
+  </div>
+  <p class="caption">Flat layout grammar only — status bar, tile row, utility rail, button hints. Not a device.</p>
+
+  <h3>Contrast — WCAG 2.2 AA</h3>
+  <div class="table-wrap">
+  <table class="contrast">
+    <caption>Identity B. Every text pair passes 4.5:1 in both themes.</caption>
+    <thead><tr><th scope="col">Pair <small>AA threshold</small></th><th scope="col" colspan="2">Light</th><th scope="col" colspan="2">Dark</th></tr></thead>
+<tbody>
+<tr><th scope="row">Text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#15161D">Aa</i></span>16.55:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#F2F2F8">Aa</i></span>17.15:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Muted text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#585C6B">Aa</i></span>6.10:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#A3A6B8">Aa</i></span>7.93:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Text on raised surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FFFFFF;color:#15161D">Aa</i></span>18.04:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#181A24;color:#F2F2F8">Aa</i></span>15.54:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Muted text on raised surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FFFFFF;color:#585C6B">Aa</i></span>6.65:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#181A24;color:#A3A6B8">Aa</i></span>7.18:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Primary as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#6330E0">Aa</i></span>6.36:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#A58BFF">Aa</i></span>7.05:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-primary text on primary fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#6330E0;color:#FFFFFF">Aa</i></span>6.93:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#A58BFF;color:#1B0A4D">Aa</i></span>6.46:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Secondary as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#4D7A00">Aa</i></span>4.70:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#B9F73E">Aa</i></span>14.97:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-secondary text on secondary fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#4D7A00;color:#FFFFFF">Aa</i></span>5.12:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#B9F73E;color:#1A2600">Aa</i></span>12.44:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Success as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#2E7D32">Aa</i></span>4.71:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#58D68D">Aa</i></span>10.40:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on success fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#2E7D32;color:#FFFFFF">Aa</i></span>5.13:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#58D68D;color:#0E0F15">Aa</i></span>10.40:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Warning as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#8A6A00">Aa</i></span>4.65:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#F5C542">Aa</i></span>11.79:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on warning fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#8A6A00;color:#FFFFFF">Aa</i></span>5.07:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#F5C542;color:#0E0F15">Aa</i></span>11.79:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Error as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#C2185B">Aa</i></span>5.39:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#FF6FB5">Aa</i></span>7.46:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on error fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#C2185B;color:#FFFFFF">Aa</i></span>5.87:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#FF6FB5;color:#0E0F15">Aa</i></span>7.46:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Info as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#6330E0">Aa</i></span>6.36:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#A58BFF">Aa</i></span>7.05:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on info fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#6330E0;color:#FFFFFF">Aa</i></span>6.93:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#A58BFF;color:#0E0F15">Aa</i></span>7.05:1</td><td class="pass">AA</td></tr>
+<tr class="ui"><th scope="row">Primary fill vs surface (non-text, 1.4.11)<small>3:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#6330E0">Aa</i></span>6.36:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#A58BFF">Aa</i></span>7.05:1</td><td class="pass">AA</td></tr>
+<tr class="ui"><th scope="row">Secondary fill vs surface (non-text, 1.4.11)<small>3:1</small></th><td><span class="pair"><i style="background:#F4F5F9;color:#4D7A00">Aa</i></span>4.70:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#0E0F15;color:#B9F73E">Aa</i></span>14.97:1</td><td class="pass">AA</td></tr>
+</tbody>
+  </table>
+  </div>
+</article>
+
+<!-- ============================================================ C ==== -->
+<article class="identity id-c" id="identity-c" aria-labelledby="h-c">
+  <header>
+    <h2 id="h-c">C · Ink &amp; paper</h2>
+    <p>Paper and ink neutrals, one saffron accent, slate for structure. Editorial and heavy-lined — the shell reads like a printed programme.</p>
+  </header>
+
+  <h3>Mark</h3>
+  <div class="pair2">
+    <div class="panel light" data-theme="light">
+      <div class="markrow">
+        <svg class="mark mark-bare" viewBox="0 0 76 64" role="img" aria-labelledby="c-mark-l"><title id="c-mark-l">KJ monogram, identity C, on the light surface</title><g fill="currentColor"><rect x="4" y="8" width="20" height="6"/><rect x="8" y="8" width="12" height="48"/><rect x="4" y="50" width="20" height="6"/><rect x="50" y="8" width="24" height="6"/><rect x="58" y="8" width="12" height="36"/></g><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="butt"><path d="M26 33L42 11"/><path d="M26 31L42 57"/><path d="M64 46a10 10 0 0 1-10 10h-8"/></g></svg>
+        <span class="badge" role="img" aria-label="KJ monogram, identity C, as an ink-outlined saffron tile badge on the light surface"><svg class="mark" viewBox="0 0 76 64" aria-hidden="true"><g fill="currentColor"><rect x="4" y="8" width="20" height="6"/><rect x="8" y="8" width="12" height="48"/><rect x="4" y="50" width="20" height="6"/><rect x="50" y="8" width="24" height="6"/><rect x="58" y="8" width="12" height="36"/></g><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="butt"><path d="M26 33L42 11"/><path d="M26 31L42 57"/><path d="M64 46a10 10 0 0 1-10 10h-8"/></g></svg></span>
+      </div>
+    </div>
+    <div class="panel dark" data-theme="dark">
+      <div class="markrow">
+        <svg class="mark mark-bare" viewBox="0 0 76 64" role="img" aria-labelledby="c-mark-d"><title id="c-mark-d">KJ monogram, identity C, on the dark surface</title><g fill="currentColor"><rect x="4" y="8" width="20" height="6"/><rect x="8" y="8" width="12" height="48"/><rect x="4" y="50" width="20" height="6"/><rect x="50" y="8" width="24" height="6"/><rect x="58" y="8" width="12" height="36"/></g><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="butt"><path d="M26 33L42 11"/><path d="M26 31L42 57"/><path d="M64 46a10 10 0 0 1-10 10h-8"/></g></svg>
+        <span class="badge" role="img" aria-label="KJ monogram, identity C, as a saffron tile badge on the dark surface"><svg class="mark" viewBox="0 0 76 64" aria-hidden="true"><g fill="currentColor"><rect x="4" y="8" width="20" height="6"/><rect x="8" y="8" width="12" height="48"/><rect x="4" y="50" width="20" height="6"/><rect x="50" y="8" width="24" height="6"/><rect x="58" y="8" width="12" height="36"/></g><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="butt"><path d="M26 33L42 11"/><path d="M26 31L42 57"/><path d="M64 46a10 10 0 0 1-10 10h-8"/></g></svg></span>
+      </div>
+    </div>
+  </div>
+  <p class="caption">Heavy slab forms with stencil cuts: the K's arms and the J's hook are separated from their stems by a 2-unit break. Butt terminals, slab serifs top and bottom. On paper the mark is ink; on ink it is saffron.</p>
+
+  <h3>Palette</h3>
+  <div class="pair2">
+    <div class="panel light" data-theme="light">
+<ul class="swatches light" aria-label="C · Ink & paper light theme palette">
+  <li><span class="chip" style="background:#E8B11B"></span><span class="tok">primary</span><code>#E8B11B</code></li>
+  <li><span class="chip" style="background:#17160F"></span><span class="tok">on-primary</span><code>#17160F</code></li>
+  <li><span class="chip" style="background:#7A5A00"></span><span class="tok">primary-text</span><code>#7A5A00</code></li>
+  <li><span class="chip" style="background:#4A5560"></span><span class="tok">secondary</span><code>#4A5560</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">on-secondary</span><code>#FFFFFF</code></li>
+  <li><span class="chip" style="background:#F6F1E6"></span><span class="tok">surface</span><code>#F6F1E6</code></li>
+  <li><span class="chip" style="background:#FFFDF8"></span><span class="tok">surface-raised</span><code>#FFFDF8</code></li>
+  <li><span class="chip" style="background:#17160F"></span><span class="tok">text</span><code>#17160F</code></li>
+  <li><span class="chip" style="background:#5A574B"></span><span class="tok">text-muted</span><code>#5A574B</code></li>
+  <li><span class="chip" style="background:#2F6B3A"></span><span class="tok">success</span><code>#2F6B3A</code></li>
+  <li><span class="chip" style="background:#9A4A00"></span><span class="tok">warning</span><code>#9A4A00</code></li>
+  <li><span class="chip" style="background:#9B2C2C"></span><span class="tok">error</span><code>#9B2C2C</code></li>
+  <li><span class="chip" style="background:#4A5560"></span><span class="tok">info</span><code>#4A5560</code></li>
+  <li><span class="chip" style="background:#FFFFFF"></span><span class="tok">on-state</span><code>#FFFFFF</code></li>
+</ul>
+      <div class="states heavy" aria-label="Trophy states, light theme">
+        <span class="state"><span class="locked"><svg viewBox="0 0 24 24" role="img" aria-label="Locked trophy: muted heavy outline"><path d="M6 4h12v5l-2 4h-8L6 9z"/><path d="M6 6H3v3h3"/><path d="M18 6h3v3h-3"/><path d="M12 13v4"/><path d="M7 20h10"/></svg></span>locked</span>
+        <span class="state"><span class="progress"><svg viewBox="0 0 24 24" role="img" aria-label="In-progress trophy: warning heavy outline"><path d="M6 4h12v5l-2 4h-8L6 9z"/><path d="M6 6H3v3h3"/><path d="M18 6h3v3h-3"/><path d="M12 13v4"/><path d="M7 20h10"/></svg></span>in progress</span>
+        <span class="state"><span class="unlocked"><svg viewBox="0 0 24 24" role="img" aria-label="Unlocked trophy: saffron fill inside an ink outline"><path d="M6 4h12v5l-2 4h-8L6 9z" fill="currentColor" stroke="#17160F"/><path d="M6 6H3v3h3" stroke="#17160F"/><path d="M18 6h3v3h-3" stroke="#17160F"/><path d="M12 13v4" stroke="#17160F"/><path d="M7 20h10" stroke="#17160F"/></svg></span>unlocked</span>
+      </div>
+    </div>
+    <div class="panel dark" data-theme="dark">
+<ul class="swatches dark" aria-label="C · Ink & paper dark theme palette">
+  <li><span class="chip" style="background:#E8B11B"></span><span class="tok">primary</span><code>#E8B11B</code></li>
+  <li><span class="chip" style="background:#17160F"></span><span class="tok">on-primary</span><code>#17160F</code></li>
+  <li><span class="chip" style="background:#9AA5B0"></span><span class="tok">secondary</span><code>#9AA5B0</code></li>
+  <li><span class="chip" style="background:#17160F"></span><span class="tok">on-secondary</span><code>#17160F</code></li>
+  <li><span class="chip" style="background:#171612"></span><span class="tok">surface</span><code>#171612</code></li>
+  <li><span class="chip" style="background:#23211B"></span><span class="tok">surface-raised</span><code>#23211B</code></li>
+  <li><span class="chip" style="background:#F2ECDD"></span><span class="tok">text</span><code>#F2ECDD</code></li>
+  <li><span class="chip" style="background:#B3AC99"></span><span class="tok">text-muted</span><code>#B3AC99</code></li>
+  <li><span class="chip" style="background:#84C77A"></span><span class="tok">success</span><code>#84C77A</code></li>
+  <li><span class="chip" style="background:#E8894A"></span><span class="tok">warning</span><code>#E8894A</code></li>
+  <li><span class="chip" style="background:#F07A78"></span><span class="tok">error</span><code>#F07A78</code></li>
+  <li><span class="chip" style="background:#9AA5B0"></span><span class="tok">info</span><code>#9AA5B0</code></li>
+  <li><span class="chip" style="background:#171612"></span><span class="tok">on-state</span><code>#171612</code></li>
+</ul>
+      <div class="states heavy" aria-label="Trophy states, dark theme">
+        <span class="state"><span class="locked"><svg viewBox="0 0 24 24" role="img" aria-label="Locked trophy: muted heavy outline"><path d="M6 4h12v5l-2 4h-8L6 9z"/><path d="M6 6H3v3h3"/><path d="M18 6h3v3h-3"/><path d="M12 13v4"/><path d="M7 20h10"/></svg></span>locked</span>
+        <span class="state"><span class="progress"><svg viewBox="0 0 24 24" role="img" aria-label="In-progress trophy: warning heavy outline"><path d="M6 4h12v5l-2 4h-8L6 9z"/><path d="M6 6H3v3h3"/><path d="M18 6h3v3h-3"/><path d="M12 13v4"/><path d="M7 20h10"/></svg></span>in progress</span>
+        <span class="state"><span class="unlocked"><svg viewBox="0 0 24 24" role="img" aria-label="Unlocked trophy: saffron fill and outline"><path d="M6 4h12v5l-2 4h-8L6 9z" fill="currentColor"/><path d="M6 6H3v3h3"/><path d="M18 6h3v3h-3"/><path d="M12 13v4"/><path d="M7 20h10"/></svg></span>unlocked</span>
+      </div>
+    </div>
+  </div>
+  <p class="caption">One accent. Saffron is the active item and the reward; slate does structure, dividers and info. <strong>On paper, every accent fill carries a 2&nbsp;px ink outline</strong>, and saffron as running text uses the deepened <code>primary-text</code>; on ink, saffron stands alone. Semantic states are muted earth hues so the single accent stays the loudest thing on screen.</p>
+
+  <h3>Icon direction</h3>
+  <div class="pair2">
+    <div class="panel light heavy" data-theme="light">
+      <div class="icons">
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="c-ic1l"><title id="c-ic1l">Trophy icon, identity C</title><path d="M6 4h12v5l-2 4h-8L6 9z"/><path d="M6 6H3v3h3"/><path d="M18 6h3v3h-3"/><path d="M12 13v4"/><path d="M7 20h10"/></svg><figcaption>trophy</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="c-ic2l"><title id="c-ic2l">Settings gear icon, identity C</title><path d="M9.78 5.15 L9.58 2.3 L14.42 2.3 L14.22 5.15 L16.82 6.65 L19.19 5.05 L21.61 9.24 L19.04 10.5 L19.04 13.5 L21.61 14.76 L19.19 18.95 L16.82 17.35 L14.22 18.85 L14.42 21.7 L9.58 21.7 L9.78 18.85 L7.18 17.35 L4.81 18.95 L2.39 14.76 L4.96 13.5 L4.96 10.5 L2.39 9.24 L4.81 5.05 L7.18 6.65Z"/><path d="M10 10h4v4h-4z"/></svg><figcaption>settings</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="c-ic3l"><title id="c-ic3l">Play-activity bars icon, identity C</title><path d="M3 13h4v7H3z"/><path d="M10 5h4v15h-4z"/><path d="M17 9h4v11h-4z"/></svg><figcaption>activity</figcaption></figure>
+      </div>
+    </div>
+    <div class="panel dark heavy" data-theme="dark">
+      <div class="icons">
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="c-ic1d"><title id="c-ic1d">Trophy icon, identity C, dark</title><path d="M6 4h12v5l-2 4h-8L6 9z"/><path d="M6 6H3v3h3"/><path d="M18 6h3v3h-3"/><path d="M12 13v4"/><path d="M7 20h10"/></svg><figcaption>trophy</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="c-ic2d"><title id="c-ic2d">Settings gear icon, identity C, dark</title><path d="M9.78 5.15 L9.58 2.3 L14.42 2.3 L14.22 5.15 L16.82 6.65 L19.19 5.05 L21.61 9.24 L19.04 10.5 L19.04 13.5 L21.61 14.76 L19.19 18.95 L16.82 17.35 L14.22 18.85 L14.42 21.7 L9.58 21.7 L9.78 18.85 L7.18 17.35 L4.81 18.95 L2.39 14.76 L4.96 13.5 L4.96 10.5 L2.39 9.24 L4.81 5.05 L7.18 6.65Z"/><path d="M10 10h4v4h-4z"/></svg><figcaption>settings</figcaption></figure>
+        <figure><svg viewBox="0 0 24 24" role="img" aria-labelledby="c-ic3d"><title id="c-ic3d">Play-activity bars icon, identity C, dark</title><path d="M3 13h4v7H3z"/><path d="M10 5h4v15h-4z"/><path d="M17 9h4v11h-4z"/></svg><figcaption>activity</figcaption></figure>
+      </div>
+    </div>
+  </div>
+  <p class="caption">3&nbsp;px outlines on a 24&nbsp;px grid, square caps, mitred joins, no rounding. Fills appear only for the active or unlocked item, in saffron, inside the outline.</p>
+
+  <h3>Motion</h3>
+  <div class="panel light" data-theme="light">
+    <div class="motion">
+      <svg class="plot" viewBox="0 0 120 100" role="img" aria-labelledby="c-plot"><title id="c-plot">Easing plot for Glide, cubic-bezier 0.16, 1, 0.3, 1 — a fast departure and a long deceleration with no overshoot</title><line class="axis" x1="8" y1="80.25" x2="112" y2="80.25"/><line class="axis" x1="8" y1="25.25" x2="112" y2="25.25"/><text x="9" y="78">0</text><text x="9" y="23">1</text><path class="curve" d="M8 80.25 C24.64 25.25 39.2 25.25 112 25.25"/></svg>
+      <div class="demo">
+        <button type="button" class="demo-tile" aria-label="Motion demo for identity C: hover or focus to see the Glide curve">hover / focus</button>
+        <p><strong>Glide</strong> — <code>cubic-bezier(0.16, 1, 0.3, 1)</code>, 180–320&nbsp;ms. Fast departure, long deceleration; things arrive like a page settling. Reduced motion: the same end state, zero duration.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Chime</h3>
+  <p>A soft low sine thud followed by a single bright click — like a stamp landing on paper.</p>
+
+  <h3>In context</h3>
+  <div class="stack">
+    <div class="strip light" data-theme="light" role="img" aria-label="Identity C in context, light theme: status bar with the ink KJ mark top-left and a clock top-right, a row of ink-outlined tiles with the first one focused in saffron, a rail of circular utility buttons, and A Select / B Back hints">
+      <div class="bar"><svg class="logo" viewBox="0 0 76 64" aria-hidden="true"><g fill="currentColor"><rect x="4" y="8" width="20" height="6"/><rect x="8" y="8" width="12" height="48"/><rect x="4" y="50" width="20" height="6"/><rect x="50" y="8" width="24" height="6"/><rect x="58" y="8" width="12" height="36"/></g><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="butt"><path d="M26 33L42 11"/><path d="M26 31L42 57"/><path d="M64 46a10 10 0 0 1-10 10h-8"/></g></svg><span class="clock"><i></i>12:00</span></div>
+      <ul class="tiles"><li class="tile is-focused"><i></i>Experience</li><li class="tile"><i></i>Projects</li><li class="tile"><i></i>Certifications</li><li class="tile"><i></i>Education</li><li class="tile"><i></i>Hobbies</li><li class="tile"><i></i>Now</li></ul>
+      <div class="foot"><ul class="rail"><li class="is-active"></li><li></li><li></li><li></li><li></li></ul><span class="hints"><span><kbd>A</kbd>Select</span><span><kbd>B</kbd>Back</span></span></div>
+    </div>
+    <div class="strip dark" data-theme="dark" role="img" aria-label="Identity C in context, dark theme: the same layout on the ink surface with the mark and focus in saffron">
+      <div class="bar"><svg class="logo" viewBox="0 0 76 64" aria-hidden="true"><g fill="currentColor"><rect x="4" y="8" width="20" height="6"/><rect x="8" y="8" width="12" height="48"/><rect x="4" y="50" width="20" height="6"/><rect x="50" y="8" width="24" height="6"/><rect x="58" y="8" width="12" height="36"/></g><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="butt"><path d="M26 33L42 11"/><path d="M26 31L42 57"/><path d="M64 46a10 10 0 0 1-10 10h-8"/></g></svg><span class="clock"><i></i>12:00</span></div>
+      <ul class="tiles"><li class="tile is-focused"><i></i>Experience</li><li class="tile"><i></i>Projects</li><li class="tile"><i></i>Certifications</li><li class="tile"><i></i>Education</li><li class="tile"><i></i>Hobbies</li><li class="tile"><i></i>Now</li></ul>
+      <div class="foot"><ul class="rail"><li class="is-active"></li><li></li><li></li><li></li><li></li></ul><span class="hints"><span><kbd>A</kbd>Select</span><span><kbd>B</kbd>Back</span></span></div>
+    </div>
+  </div>
+  <p class="caption">Flat layout grammar only — status bar, tile row, utility rail, button hints. Not a device.</p>
+
+  <h3>Contrast — WCAG 2.2 AA</h3>
+  <div class="table-wrap">
+  <table class="contrast">
+    <caption>Identity C. Every text pair passes 4.5:1 in both themes. One informative non-text note, explained below.</caption>
+    <thead><tr><th scope="col">Pair <small>AA threshold</small></th><th scope="col" colspan="2">Light</th><th scope="col" colspan="2">Dark</th></tr></thead>
+<tbody>
+<tr><th scope="row">Text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#17160F">Aa</i></span>16.10:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#F2ECDD">Aa</i></span>15.36:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Muted text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#5A574B">Aa</i></span>6.43:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#B3AC99">Aa</i></span>8.00:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Text on raised surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FFFDF8;color:#17160F">Aa</i></span>17.84:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#23211B;color:#F2ECDD">Aa</i></span>13.66:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Muted text on raised surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#FFFDF8;color:#5A574B">Aa</i></span>7.12:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#23211B;color:#B3AC99">Aa</i></span>7.11:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Primary as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#7A5A00">Aa</i></span>5.67:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#E8B11B">Aa</i></span>9.26:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-primary text on primary fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#E8B11B;color:#17160F">Aa</i></span>9.27:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#E8B11B;color:#17160F">Aa</i></span>9.27:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Secondary as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#4A5560">Aa</i></span>6.76:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#9AA5B0">Aa</i></span>7.23:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-secondary text on secondary fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#4A5560;color:#FFFFFF">Aa</i></span>7.61:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#9AA5B0;color:#17160F">Aa</i></span>7.24:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Success as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#2F6B3A">Aa</i></span>5.68:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#84C77A">Aa</i></span>8.99:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on success fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#2F6B3A;color:#FFFFFF">Aa</i></span>6.39:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#84C77A;color:#171612">Aa</i></span>8.99:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Warning as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#9A4A00">Aa</i></span>5.56:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#E8894A">Aa</i></span>6.99:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on warning fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#9A4A00;color:#FFFFFF">Aa</i></span>6.26:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#E8894A;color:#171612">Aa</i></span>6.99:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Error as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#9B2C2C">Aa</i></span>6.68:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#F07A78">Aa</i></span>6.69:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on error fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#9B2C2C;color:#FFFFFF">Aa</i></span>7.53:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#F07A78;color:#171612">Aa</i></span>6.69:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">Info as text on surface<small>4.5:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#4A5560">Aa</i></span>6.76:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#9AA5B0">Aa</i></span>7.23:1</td><td class="pass">AA</td></tr>
+<tr><th scope="row">On-state text on info fill<small>4.5:1</small></th><td><span class="pair"><i style="background:#4A5560;color:#FFFFFF">Aa</i></span>7.61:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#9AA5B0;color:#171612">Aa</i></span>7.23:1</td><td class="pass">AA</td></tr>
+<tr class="ui"><th scope="row">Primary fill vs surface (non-text, 1.4.11)<small>3:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#E8B11B">Aa</i></span>1.74:1</td><td class="note">Below 3:1 *</td><td><span class="pair"><i style="background:#171612;color:#E8B11B">Aa</i></span>9.26:1</td><td class="pass">AA</td></tr>
+<tr class="ui"><th scope="row">Secondary fill vs surface (non-text, 1.4.11)<small>3:1</small></th><td><span class="pair"><i style="background:#F6F1E6;color:#4A5560">Aa</i></span>6.76:1</td><td class="pass">AA</td><td><span class="pair"><i style="background:#171612;color:#9AA5B0">Aa</i></span>7.23:1</td><td class="pass">AA</td></tr>
+</tbody>
+  </table>
+  </div>
+  <p class="footnote">* Saffron on paper is 1.74:1 as a bare fill. In this identity no accent fill is ever bare on paper: every accent-filled component carries a 2&nbsp;px ink outline (<code>#17160F</code>, 16.10:1 against the surface), and the outline is the component boundary that 1.4.11 measures. Text on the saffron fill is ink at 9.27:1; saffron as running text is <code>primary-text</code> at 5.67:1. The focus ring on paper is ink, not saffron.</p>
+</article>
+
+</section>
+</main>
+
+<footer class="page">
+  <h2>What is borrowed, and what is not</h2>
+  <p>The shell borrows an <strong>interaction grammar</strong> — flat, high-contrast surfaces; thick rounded-square tiles in a horizontal, recency-ordered row; a bottom rail of circular utility icons; a top status bar with identity left and clock/status right; corner button hints; near-instant transitions and minimal click-style sound. That grammar is a functional layout convention shared by many console and launcher interfaces. Every mark, icon, palette, easing curve and chime concept on this page is <strong>original work</strong>: no third-party console marks, logotypes, typefaces, characters, box art, hardware renderings or chimes were used, traced or referenced as assets, and no red-with-blue accent pairing appears in any proposal. The in-context strips above are flat interface layouts, not devices.</p>
+  <p><strong>Contrast method.</strong> Ratios use the WCAG 2.x formula: sRGB channels linearised, relative luminance weighted 0.2126 / 0.7152 / 0.0722, ratio = (L<sub>lighter</sub> + 0.05) / (L<sub>darker</sub> + 0.05), rounded to two decimals. Thresholds: 4.5:1 for text (1.4.3), 3:1 for non-text components (1.4.11, shown as informative rows). Palette hexes, specimen colours and table values were generated from one source, so they cannot disagree.</p>
+  <p><strong>What happens after the pick.</strong> The chosen identity becomes the input to Phase 0b: design tokens, the full icon set, the mark as an asset, the chime asset, and <code>DESIGN.md</code>. Nothing on this page is a token yet.</p>
+</footer>
+
+</div>
+</body>
+</html>
