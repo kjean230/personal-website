@@ -18,6 +18,8 @@ Pre-code. The repository currently holds two planning documents, an MIT license,
 
 Where they disagree on order, branching, or lane composition, the plan wins. Scope decisions are settled — do not relitigate them. Brief §8 is superseded by plan §3–6; do not follow its ordering. Flag genuine blockers; ask before inventing content (entries, dates, orgs, team names). Items the owner must supply, and which phase each blocks, are tabulated in plan §8.
 
+**`REFERENCES.md` — local only, never committed.** A working file that records where the interaction grammar in brief §2.1 and §5 was observed, annotated against the sub-branches each source informs. It is authoritative for interaction-grammar questions in Phase 0 and `lane/console-shell`. It is git-ignored by design: committing a list of source URLs would turn `DESIGN.md` from a provenance document into a side-by-side comparison exhibit, which undercuts the borrowed-grammar argument the IP posture rests on. Expect it to be **absent in a fresh clone** — that absence is normal, is not a blocker, and is not a reason to re-derive the references. It also carries a caution worth repeating here: the illustrative-use rationale that ticoverse.com applies to third-party console logos and box art **does not transfer to this project**. Brief §2.1 governs assets without exception.
+
 ## Architecture (as specified)
 
 **Two renderers, one dataset, same URLs.**
