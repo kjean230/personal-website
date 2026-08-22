@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local-only interaction reference (see CLAUDE.md). Never committed.
+REFERENCES.md
