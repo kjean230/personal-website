@@ -94,7 +94,7 @@ Constraints from brief §2.1 apply to all three: no red/blue Joy-Con pairing, no
 - WCAG 2.2 AA contrast verified in **both** themes, documented per token pair
 - Icon set drawn from scratch as SVG
 - Wordmark asset
-- Boot chime asset (see owner input §7.4)
+- Boot chime asset (see owner input §8)
 - `DESIGN.md` recording the borrowed-grammar vs. protected-expression distinction
 
 **Checklist:** tokens consume nowhere-hardcoded values · contrast table present and passing · zero third-party assets in repo or bundle · `DESIGN.md` present.
@@ -160,7 +160,7 @@ Sub-branches: `feat/admin-auth`, `feat/admin-crud`, `feat/admin-media`, `feat/ad
 ## 6. Phase 3 — Hardening (serial, solo)
 
 Branch: `lane/hardening`.
-axe scan · manual keyboard pass · screen reader pass · performance budget enforcement · error boundaries · `/privacy` · README · MIT license · full security audit against §6 checklist across all merged lanes.
+axe scan · manual keyboard pass · screen reader pass · performance budget enforcement · error boundaries · `/privacy` · README · MIT license · full security audit against the §7 security block across all merged lanes.
 
 ---
 
