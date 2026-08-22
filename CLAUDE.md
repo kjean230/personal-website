@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repo state
 
-Pre-code. The repository currently holds two planning documents, an MIT license, and a Python-template `.gitignore`. There is no `package.json`, no build/lint/test tooling, and no application code yet.
+Pre-code. The repository holds the planning documents (`BUILD_BRIEF.md`, `BUILD_PLAN.md`, `PROMPTS.md`), per-session handoffs in `handoff/`, static design artifacts in `design/`, an MIT license, and a Python-template `.gitignore`. There is no `package.json`, no build/lint/test tooling, and no application code yet.
 
 - **Commands:** none exist yet. They arrive with spine sub-branch S1 (`feat/spine-ci`: Next.js App Router + TypeScript scaffold, lint, typecheck, test runner, Lighthouse CI). When that lands, replace this section with the real package scripts, including how to run a single test.
+- **Design artifacts** live in `design/` as self-contained static HTML/SVG opened directly from disk — no build step, no external requests. The Phase 0a identity comparison page is `design/identity-proposals/index.html`.
 - The `.gitignore` is a Python template; it does not ignore `node_modules/`, `.next/`, `.vercel/`, or `.env*.local`. Extend it when scaffolding.
 
 ## Authority documents — read before doing anything
@@ -44,7 +45,7 @@ Where they disagree on order, branching, or lane composition, the plan wins. Sco
 
 ## Workflow
 
-**Branching (plan §2):** `main` is protected. `lane/<name>` is long-lived, one per lane, rebased on `main` after every `main` merge. `feat/<lane>-<slice>` is a stacked sub-branch that merges into its lane. Sub-branch → lane auto-merges on green CI with no human step; lane → `main` needs green CI **and** the owner-signed acceptance checklist (plan §7, including its security and IP blocks) — that is the only human merge gate. One agent per lane; never two agents on one lane branch. Every PR body links the lane checklist.
+**Branching (plan §2):** `main` is protected. `lane/<name>` is long-lived, one per lane, rebased on `main` after every `main` merge. `feat/<lane>-<slice>` is a stacked sub-branch that merges into its lane. Sub-branch → lane auto-merges on green CI with no human step (Phase 0 predates CI and merges by hand — plan §3); lane → `main` needs green CI **and** the owner-signed acceptance checklist (plan §7, including its security and IP blocks) — that is the only human merge gate. One agent per lane; never two agents on one lane branch. Every PR body links the lane checklist.
 
 **Stopping:** stop when the PR opens — see `BUILD_PLAN.md` §2.1, which is canonical for stopping behavior and is not summarized here.
 

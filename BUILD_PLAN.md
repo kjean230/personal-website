@@ -80,6 +80,8 @@ A sub-branch is a unit of work **and** a unit of stopping. Opening the PR ends t
 
 Nothing visual starts until 0b merges.
 
+Phase 0 predates CI and auto-merge (both arrive with S1): 0a and 0b PRs are opened without auto-merge and merged by hand by the owner; CI items in §2.1 and §7 are recorded as N/A for this phase.
+
 ### 0a — `feat/identity-proposals` → `lane/identity`
 
 Produce **three complete, distinct identities**. Each one includes: wordmark, accent palette (primary, secondary, surface, text, semantic states), icon direction, motion curve character, and a one-line chime concept. Render each as a single comparison page.
