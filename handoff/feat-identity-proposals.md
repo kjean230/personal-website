@@ -24,9 +24,9 @@
 - None within 0a. Whether the page keeps all three identities after the pick or is pruned to the chosen one as provenance is 0b's call.
 
 ## Open questions for owner
-- **The pick: A, B, or C.** Blocks 0b.
-- Boot chime for 0b: commissioned, composed by the agent, or omitted (plan §8). The concepts here are words only.
+- **The pick — resolved: owner chose C · Ink & paper** (in-session, 2026-08-22, after reviewing the page). 0b builds from C; A and B are not carried forward.
+- Boot chime for 0b: commissioned, composed by the agent, or omitted (plan §8). The concept for C is words only — a low sine thud followed by a single bright click.
 - Repo settings: auto-merge disabled and `main` unprotected until S1. Nothing for 0b to do; noted for S1.
 
 ## Next
-0b — `feat/identity-tokens` on `lane/identity`, after the pick.
+0b — `feat/identity-tokens` on `lane/identity`, building **C · Ink & paper**: tokens (palette, type scale, spacing, radii, motion, elevation), contrast table per token pair in both themes, the icon set as SVG, the KJ mark as an asset, the chime asset (pending the §8 decision), and `DESIGN.md`. Start from this PR's page and handoff; the C column is the spec.
