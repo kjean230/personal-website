@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" role="img" aria-labelledby="icon-album-title">
+  <title id="icon-album-title">Album</title>
+  <path d="M3.5 4.5h17v15h-17z"/>
+  <path d="M5 17l4-4 3 3 3-3 4 4"/>
+</svg>

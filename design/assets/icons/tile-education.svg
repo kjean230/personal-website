@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" role="img" aria-labelledby="icon-tile-education-title">
+  <title id="icon-tile-education-title">Education</title>
+  <path d="M3.5 9.5l8.5-4.5 8.5 4.5-8.5 4.5z"/>
+  <path d="M6.5 12v5l5.5 3 5.5-3v-5"/>
+  <path d="M20.5 9.5v5"/>
+</svg>
