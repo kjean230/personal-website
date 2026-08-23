@@ -1,0 +1,185 @@
+/* ==========================================================================
+   Design tokens — identity C · Ink & paper
+   --------------------------------------------------------------------------
+   SOURCE OF TRUTH. Edit this file, then run:
+
+       node design/tokens/build.mjs          regenerate tokens.json, CONTRAST.md, specimen.html
+       node design/tokens/build.mjs --check  exit non-zero if any generated file is stale
+
+   Conventions the generator depends on (keep them):
+     · one `--token: value;` declaration per line
+     · exactly four blocks, in this order:
+         :root                                  static tokens + light ("paper") theme
+         :root[data-theme="dark"]               dark ("ink") theme, explicit opt-in
+         @media (prefers-color-scheme: dark)    the same dark block, for the "system" setting
+         @media (prefers-reduced-motion: reduce) every duration collapses to 0ms
+     · the two dark blocks must be identical — the generator asserts it
+     · colour values are the palette hexes from Phase 0a, column C, reproduced exactly
+
+   Theme switching: the app sets `data-theme="light" | "dark"` on <html> from the
+   settings page; with no attribute the system preference applies. Nothing imports
+   this file yet — spine S1 wires it into the app.
+
+   Identity rule carried as tokens (see DESIGN.md):
+     on paper, every accent fill carries a 2 px ink outline; on ink, saffron stands
+     alone. --color-outline-accent, --border-accent, --color-focus-ring, --color-mark
+     and --color-shadow flip between themes to express that rule.
+   ========================================================================== */
+
+:root {
+  /* ---- type ---------------------------------------------------------------
+     Inter (UI) and JetBrains Mono (code, terminal). Both OFL. Font files are not
+     committed; the app loads them at build time. The fallback stacks are what
+     local specimen pages render with. */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5625rem;
+  --text-2xl: 1.953rem;
+  --text-3xl: 2.441rem;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --tracking-tight: -0.01em;
+  --tracking-caps: 0.08em;
+
+  /* ---- spacing (4 px base) and sizes --------------------------------------- */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --size-touch-min: 44px;
+  --size-icon-sm: 16px;
+  --size-icon: 24px;
+  --size-icon-lg: 36px;
+  --icon-grid: 24px;
+  --icon-stroke: 3px;
+  --outline-accent-width: 2px;
+
+  /* ---- radii ---------------------------------------------------------------
+     Square-cornered identity: xs for chips and key caps, sm for tiles, md for the
+     mark badge. Pill and circle exist for facet chips and the utility rail. */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-pill: 9999px;
+  --radius-circle: 50%;
+
+  /* ---- motion --------------------------------------------------------------
+     Glide: fast departure, long deceleration, no overshoot. Things arrive like a
+     page settling. Under reduced motion every duration is 0ms (see last block). */
+  --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-linear: linear;
+  --duration-fast: 180ms;
+  --duration-base: 260ms;
+  --duration-slow: 320ms;
+  --duration-boot: 1200ms;
+
+  /* ---- focus, borders, elevation ------------------------------------------
+     Elevation is a hard offset with no blur — a stamp, not a glow. */
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+  --focus-ring: var(--focus-ring-width) solid var(--color-focus-ring);
+  --border-hairline: 1px solid var(--color-border-subtle);
+  --border-strong: 2px solid var(--color-border-strong);
+  --border-accent: var(--outline-accent-width) solid var(--color-outline-accent);
+  --color-shadow: var(--color-outline-accent);
+  --elevation-0: none;
+  --elevation-1: 2px 2px 0 0 var(--color-shadow);
+  --elevation-2: 3px 3px 0 0 var(--color-shadow);
+  --elevation-3: 4px 4px 0 0 var(--color-shadow);
+  --elevation-accent: 4px 4px 0 0 var(--color-primary);
+
+  /* ---- colour, theme-independent ------------------------------------------- */
+  --color-ink: #17160F;
+
+  /* ---- colour, light theme ("paper") --------------------------------------- */
+  --color-surface: #F6F1E6;
+  --color-surface-raised: #FFFDF8;
+  --color-text: #17160F;
+  --color-text-muted: #5A574B;
+  --color-primary: #E8B11B;
+  --color-on-primary: #17160F;
+  --color-primary-text: #7A5A00;
+  --color-secondary: #4A5560;
+  --color-on-secondary: #FFFFFF;
+  --color-success: #2F6B3A;
+  --color-warning: #9A4A00;
+  --color-error: #9B2C2C;
+  --color-info: #4A5560;
+  --color-on-state: #FFFFFF;
+  --color-border-subtle: rgba(0, 0, 0, 0.10);
+  --color-border-strong: #17160F;
+  --color-outline-accent: #17160F;
+  --color-focus-ring: #17160F;
+  --color-mark: #17160F;
+}
+
+/* ---- colour, dark theme ("ink") — explicit setting ------------------------ */
+:root[data-theme="dark"] {
+  --color-surface: #171612;
+  --color-surface-raised: #23211B;
+  --color-text: #F2ECDD;
+  --color-text-muted: #B3AC99;
+  --color-primary: #E8B11B;
+  --color-on-primary: #17160F;
+  --color-primary-text: #E8B11B;
+  --color-secondary: #9AA5B0;
+  --color-on-secondary: #17160F;
+  --color-success: #84C77A;
+  --color-warning: #E8894A;
+  --color-error: #F07A78;
+  --color-info: #9AA5B0;
+  --color-on-state: #171612;
+  --color-border-subtle: rgba(255, 255, 255, 0.14);
+  --color-border-strong: #B3AC99;
+  --color-outline-accent: #E8B11B;
+  --color-focus-ring: #E8B11B;
+  --color-mark: #E8B11B;
+}
+
+/* ---- colour, dark theme ("ink") — system preference, no explicit setting --- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-surface: #171612;
+    --color-surface-raised: #23211B;
+    --color-text: #F2ECDD;
+    --color-text-muted: #B3AC99;
+    --color-primary: #E8B11B;
+    --color-on-primary: #17160F;
+    --color-primary-text: #E8B11B;
+    --color-secondary: #9AA5B0;
+    --color-on-secondary: #17160F;
+    --color-success: #84C77A;
+    --color-warning: #E8894A;
+    --color-error: #F07A78;
+    --color-info: #9AA5B0;
+    --color-on-state: #171612;
+    --color-border-subtle: rgba(255, 255, 255, 0.14);
+    --color-border-strong: #B3AC99;
+    --color-outline-accent: #E8B11B;
+    --color-focus-ring: #E8B11B;
+    --color-mark: #E8B11B;
+  }
+}
+
+/* ---- reduced motion: same end state, zero duration (boot included) --------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-boot: 0ms;
+  }
+}

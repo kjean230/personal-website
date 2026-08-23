@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boot chime preview — identity C</title>
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="../../tokens/tokens.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:var(--space-8) var(--space-6);background:var(--color-surface);color:var(--color-text);font-family:var(--font-sans);font-size:var(--text-md);line-height:var(--leading-normal)}
+main{max-width:64ch;margin:0 auto}
+h1{font-size:var(--text-2xl);line-height:var(--leading-tight);letter-spacing:var(--tracking-tight);margin:0 0 var(--space-2)}
+p{margin:var(--space-2) 0;color:var(--color-text-muted)}
+button{font:inherit;font-weight:var(--weight-semibold);min-height:var(--size-touch-min);padding:var(--space-2) var(--space-6);margin:var(--space-4) 0;background:var(--color-primary);color:var(--color-on-primary);border:var(--border-accent);border-radius:var(--radius-sm);box-shadow:var(--elevation-1);cursor:pointer;transition:transform var(--duration-fast) var(--ease-glide),box-shadow var(--duration-fast) var(--ease-glide)}
+button:hover{transform:translateY(-2px);box-shadow:var(--elevation-2)}
+button:focus-visible{outline:var(--focus-ring);outline-offset:var(--focus-ring-offset)}
+pre{font-family:var(--font-mono);font-size:var(--text-sm);background:var(--color-surface-raised);border:var(--border-hairline);border-radius:var(--radius-xs);padding:var(--space-4);overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+  <h1>Boot chime</h1>
+  <p>Identity C · Ink &amp; paper. A soft low sine thud, then one bright click — a stamp landing on paper. Synthesised from <code>boot-chime.js</code> on each press; there is no audio file.</p>
+  <button id="play" type="button">Play chime</button>
+  <p>Plays once per press, only on a user gesture. In the app, sound is off by default and the chime runs inside the boot sequence, which reduced motion disables.</p>
+  <h2>Spec</h2>
+  <pre id="spec"></pre>
+</main>
+<script src="boot-chime.js"></script>
+<script>
+  (function () {
+    var ctx = null;
+    document.getElementById("spec").textContent = JSON.stringify(bootChime.spec, null, 2);
+    document.getElementById("play").addEventListener("click", function () {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      ctx.resume().then(function () { bootChime.play(ctx); });
+    });
+  })();
+</script>
+</body>
+</html>
