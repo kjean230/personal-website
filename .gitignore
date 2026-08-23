@@ -219,3 +219,6 @@ __marimo__/
 
 # Local-only interaction reference (see CLAUDE.md). Never committed.
 REFERENCES.md
+
+# Visual Studio Code launch configuration file
+launch.json
