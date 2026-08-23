@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" role="img" aria-labelledby="icon-trophy-in-progress-title">
+  <title id="icon-trophy-in-progress-title">Trophy, in progress</title>
+  <path d="M6 4h12v5l-2 4h-8L6 9z"/>
+  <path d="M9 9.5h6"/>
+  <path d="M6 6H3v3h3"/>
+  <path d="M18 6h3v3h-3"/>
+  <path d="M12 13v4"/>
+  <path d="M7 20h10"/>
+</svg>

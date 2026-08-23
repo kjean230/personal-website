@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" role="img" aria-labelledby="icon-tile-projects-title">
+  <title id="icon-tile-projects-title">Projects</title>
+  <path d="M2.5 13.5h6v7h-6z"/>
+  <path d="M15.5 13.5h6v7h-6z"/>
+  <path d="M9 3.5h6v7h-6z"/>
+</svg>

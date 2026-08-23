@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 64" width="76" height="64" role="img" aria-labelledby="kj-mark-title">
+  <title id="kj-mark-title">KJ monogram</title>
+  <!-- Identity C · Ink & paper. Heavy slab forms with stencil cuts: the K's arms and the
+       J's hook are separated from their stems by a 2-unit break. Butt terminals, slab
+       serifs top and bottom. Paint with currentColor: ink on paper, saffron on ink
+       (the app sets color from the color-mark token). -->
+  <g fill="currentColor">
+    <rect x="4" y="8" width="20" height="6"/>
+    <rect x="8" y="8" width="12" height="48"/>
+    <rect x="4" y="50" width="20" height="6"/>
+    <rect x="50" y="8" width="24" height="6"/>
+    <rect x="58" y="8" width="12" height="36"/>
+  </g>
+  <g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="butt">
+    <path d="M26 33L42 11"/>
+    <path d="M26 31L42 57"/>
+    <path d="M64 46a10 10 0 0 1-10 10h-8"/>
+  </g>
+</svg>
