@@ -255,3 +255,7 @@ next-env.d.ts
 .DS_Store
 *.pem
 npm-debug.log*
+
+# supabase cli scratch (S2)
+supabase/.temp/
+supabase/.branches/
