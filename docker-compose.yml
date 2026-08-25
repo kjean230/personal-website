@@ -1,0 +1,36 @@
+# Local database for S2+ (BUILD_PLAN §4, S2: "local docker-compose").
+#
+# One service: Postgres from Supabase's own image, so the roles the RLS
+# policies target (anon, authenticated, service_role), the `auth` schema and
+# the platform extensions exist exactly as they do on the hosted project.
+# Nothing else from the Supabase stack runs here — the app only needs
+# Postgres until S4, and `supabase start` remains available for the full
+# stack (it uses the same port, so DATABASE_URL is identical either way).
+#
+#   npm run db:up      start (waits for healthy)
+#   npm run db:apply   apply supabase/migrations/*.sql, then supabase/seed.sql
+#   npm run db:test    RLS + schema tests against it
+#   npm run db:reset   wipe, restart, re-apply
+#   npm run db:psql    psql shell
+#
+# DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+# (local-only credentials; nothing here is a secret)
+
+services:
+  db:
+    # Keep the major version in step with supabase/config.toml [db].major_version.
+    image: supabase/postgres:17.6.1.165
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -h localhost"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+volumes:
+  db-data:

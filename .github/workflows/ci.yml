@@ -1,4 +1,5 @@
-# CI — lint · typecheck · test · design-token check · build · Lighthouse budget.
+# CI — lint · typecheck · test · design-token check · build · Lighthouse budget
+# · database migrations + RLS tests (S2).
 #
 # "CI green" is the single aggregate job and the only required status check
 # (main and lane/* rulesets reference it), so adding a job here only requires
@@ -103,10 +104,40 @@ jobs:
           path: .lighthouseci/reports
           if-no-files-found: ignore
 
+  db:
+    name: Database migrations & RLS
+    runs-on: ubuntu-latest
+    # Isolated Postgres per run from Supabase's own image, so the RLS roles
+    # and platform schemas match the hosted project. Applies every migration
+    # and the seed from scratch, then runs the schema + RLS tests.
+    services:
+      db:
+        image: supabase/postgres:17.6.1.165
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 54322:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h localhost"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 60
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:apply
+      - run: npm run db:test
+
   ci-green:
     name: CI green
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test, tokens, build, lighthouse]
+    needs: [lint, typecheck, test, tokens, build, lighthouse, db]
     if: always()
     steps:
       - name: Fail unless every needed job succeeded
