@@ -260,3 +260,6 @@ npm-debug.log*
 # supabase cli scratch (S2)
 supabase/.temp/
 supabase/.branches/
+
+# LinkedIn data export (S3 input) — never committed; only supabase/seed.content.sql is
+Complete_LinkedInDataExport*

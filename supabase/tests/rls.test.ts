@@ -632,8 +632,9 @@ describe("brief §4.1 — one record, three placements", () => {
 
   it("the trophy case sees all three states from the fixture", async () => {
     await as("anon", {}, async (c) => {
+      // Fixture rows only: the S3 content seed adds real certifications.
       const { rows } = await c.query(
-        "select status, count(*)::int as n from public.entries where kind = 'certification' group by status order by status",
+        "select status, count(*)::int as n from public.entries where kind = 'certification' and (metadata->>'fixture')::boolean group by status order by status",
       );
       expect(rows).toEqual([
         { status: "archived", n: 1 },
