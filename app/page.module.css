@@ -1,0 +1,37 @@
+/* Placeholder page — every value is a token var(); see app.css header. */
+
+.main {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.badge {
+  /* --space-16 is 4rem = 64px, the badge's native size. */
+  width: var(--space-16);
+  height: var(--space-16);
+}
+
+.badge svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
