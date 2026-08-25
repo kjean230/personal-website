@@ -3,8 +3,8 @@
 #
 # Read by:
 #   * `supabase db push` / `supabase db reset` (migrations + seed paths)
-#   * Supabase Branching, which applies supabase/migrations to each preview
-#     branch, runs supabase/seed.sql on it, and applies the [auth] settings.
+#   * `supabase config push`, which applies [api], [db.*], [auth] and
+#     [storage] to the linked hosted project (Branching is off — Free plan).
 #
 # Local development uses docker-compose.yml (Postgres only) on the same port,
 # so DATABASE_URL is the same whether the CLI stack or compose is running.
@@ -38,6 +38,21 @@ schema_paths = []
 # preview branches; never on production.
 enabled = true
 sql_paths = ["./seed.sql"]
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+# `config push` sends the storage section too. The CLI's own default for
+# vector buckets is `enabled = true`, which the platform rejects on the Free
+# plan (402 "upgrade the project to a paid tier to enable vector buckets"),
+# so it is pinned off here. Analytics buckets and image transformation are
+# Pro-only as well and stay at their disabled defaults.
+[storage.vector]
+enabled = false
+
+[storage.analytics]
+enabled = false
 
 [auth]
 enabled = true

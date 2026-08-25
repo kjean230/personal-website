@@ -240,6 +240,7 @@ node_modules/
 
 # env files — secrets live in Actions/Vercel secret stores, never in git
 .env*
+.env.local
 
 # vercel
 .vercel
