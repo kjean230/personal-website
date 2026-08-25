@@ -28,4 +28,4 @@
 4. Proposed wording for BUILD_PLAN §7 Ops (not edited — owner's file): replace "Green CI, preview deploy live on an isolated database branch" with "Green CI including the database job (migrations + RLS tests on a fresh database per run); preview deploy live. Supabase Branching is not used (Free plan); previews share the hosted project." The matching brief §9 line ("Preview deploy per PR with an isolated database branch") would read "Preview deploy per PR; database isolation is the CI database job."
 
 ## Next
-S3 — `feat/spine-linkedin-import` on `lane/spine`. Not started; the LinkedIn export was not touched in this session.
+S3 — `feat/spine-linkedin-import` on `lane/spine`. Not started; the LinkedIn export was not touched in this session. **Done 2026-08-25 (PR #10), see `handoff/feat-spine-linkedin-import.md`.**

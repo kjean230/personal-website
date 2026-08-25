@@ -38,4 +38,4 @@
 3. Keep-warm: the pause rule is measured in database requests, so the nightly ingestion cron (Pair 1) satisfies it only once it actually queries the DB; until then the project will pause after a week of no traffic (restorable, one click).
 
 ## Next
-S3 — `feat/spine-linkedin-import` on `lane/spine`: LinkedIn export parser → `entries` rows, committed as editable seed data; owner edits before S6. Input is the owner's export folder (plan §8 item "Phase S3").
+S3 — `feat/spine-linkedin-import` on `lane/spine`: LinkedIn export parser → `entries` rows, committed as editable seed data; owner edits before S6. Input is the owner's export folder (plan §8 item "Phase S3"). **Done 2026-08-25 (PR #10), see `handoff/feat-spine-linkedin-import.md`.**
