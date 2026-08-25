@@ -1,13 +1,13 @@
-// Applies supabase/migrations/*.sql in filename order, then supabase/seed.sql,
+// Applies supabase/migrations/*.sql in filename order, then the seed files,
 // to DATABASE_URL (default: the docker-compose Postgres).
 //
 // This is the local and CI runner. The hosted project is migrated by the
-// Supabase CLI (`supabase db push`) and by Branching, which read the same
-// files; this script mirrors their bookkeeping table
-// (supabase_migrations.schema_migrations) so a database it has migrated
-// looks the same to the CLI, and so re-running it only applies new files.
+// Supabase CLI / GitHub integration, which read the same files; this script
+// mirrors their bookkeeping table (supabase_migrations.schema_migrations) so
+// a database it has migrated looks the same to the CLI, and so re-running it
+// only applies new files. Seeds are re-run every time (they are idempotent).
 //
-//   node scripts/db/apply.mjs            migrations + seed
+//   node scripts/db/apply.mjs            migrations + seeds
 //   node scripts/db/apply.mjs --no-seed  migrations only
 
 import { readdir, readFile } from "node:fs/promises";
@@ -18,7 +18,10 @@ import pg from "pg";
 const DEFAULT_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const migrationsDir = path.join(root, "supabase", "migrations");
-const seedFile = path.join(root, "supabase", "seed.sql");
+// Applied in this order — fixture first, then the real, owner-edited content
+// (S3). Keep in step with [db.seed] sql_paths in supabase/config.toml. Not a
+// glob: "seed.content.sql" would sort before "seed.sql".
+const SEED_FILES = ["seed.sql", "seed.content.sql"];
 const withSeed = !process.argv.includes("--no-seed");
 
 const MIGRATION_FILE = /^(\d{14})_([\w-]+)\.sql$/;
@@ -71,16 +74,18 @@ async function main() {
     }
 
     if (withSeed) {
-      const sql = await readFile(seedFile, "utf8");
-      await client.query("begin");
-      try {
-        await client.query(sql);
-        await client.query("commit");
-      } catch (error) {
-        await client.query("rollback");
-        throw new Error(`seed failed: ${error.message}`, { cause: error });
+      for (const file of SEED_FILES) {
+        const sql = await readFile(path.join(root, "supabase", file), "utf8");
+        await client.query("begin");
+        try {
+          await client.query(sql);
+          await client.query("commit");
+        } catch (error) {
+          await client.query("rollback");
+          throw new Error(`seed ${file} failed: ${error.message}`, { cause: error });
+        }
+        console.log(`seed   supabase/${file}`);
       }
-      console.log("seed   supabase/seed.sql");
     }
   } finally {
     await client.end();
