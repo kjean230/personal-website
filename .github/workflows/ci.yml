@@ -1,0 +1,118 @@
+# CI — lint · typecheck · test · design-token check · build · Lighthouse budget.
+#
+# "CI green" is the single aggregate job and the only required status check
+# (main and lane/* rulesets reference it), so adding a job here only requires
+# extending its `needs` list — ruleset names never drift from job lists.
+#
+# The Lighthouse budgets in lighthouserc.json are sized for the S1 placeholder
+# page and should be tightened per-route as real pages land (brief §9 targets
+# recruiter LCP < 1.5s and Lighthouse a11y 100).
+
+name: CI
+
+on:
+  push:
+    branches: [main, "lane/**"]
+  pull_request:
+    branches: [main, "lane/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  tokens:
+    name: Design tokens check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # Zero-dependency generator — no npm ci needed. Fails on stale generated
+      # output, a contrast pair below AA, or an SVG construction-rule break.
+      - run: npm run tokens:check
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  lighthouse:
+    name: Lighthouse budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx lhci autorun
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/reports
+          if-no-files-found: ignore
+
+  ci-green:
+    name: CI green
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test, tokens, build, lighthouse]
+    if: always()
+    steps:
+      - name: Fail unless every needed job succeeded
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}
+        run: |
+          echo "job results: ${{ join(needs.*.result, ', ') }}"
+          exit 1
+      - name: All green
+        run: echo "all jobs succeeded"
