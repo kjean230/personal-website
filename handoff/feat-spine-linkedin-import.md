@@ -40,4 +40,4 @@
 12. Body of `brooklyn-public-library-stocker` starts with "-I assisted" exactly as exported; tidy if you like.
 
 ## Next
-S4 — `feat/spine-api` on `lane/spine`: Zod schema per `kind`, query layer for tile row, detail, facet counts, relation traversal, caching and revalidation. The BTT record and the metadata keys above are its inputs. Not started.
+S4 — `feat/spine-api` on `lane/spine`: Zod schema per `kind`, query layer for tile row, detail, facet counts, relation traversal, caching and revalidation. The BTT record and the metadata keys above are its inputs. **Done 2026-08-26 (PR #12), see `handoff/feat-spine-api.md`.**

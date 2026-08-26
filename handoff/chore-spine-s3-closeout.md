@@ -25,4 +25,4 @@
 2. Nothing else new; the keep-warm and §7-wording decisions stand as recorded.
 
 ## Next
-S4 — `feat/spine-api` on `lane/spine`: Zod schema per `kind`, query layer for tile row, detail, facet counts, relation traversal, caching and revalidation. Not started.
+S4 — `feat/spine-api` on `lane/spine`: Zod schema per `kind`, query layer for tile row, detail, facet counts, relation traversal, caching and revalidation. **Done 2026-08-26 (PR #12), see `handoff/feat-spine-api.md`.**
