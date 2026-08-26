@@ -29,4 +29,9 @@ jobs:
       SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
       SUPABASE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
     steps:
-      - run: curl --fail -s "$SUPABASE_URL/rest/v1/reaction_counts?select=entry_id&limit=1" -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY"
+      # Block scalar: the header values contain ": ", which a plain YAML
+      # scalar would read as a mapping.
+      - run: |
+          curl --fail -s "$SUPABASE_URL/rest/v1/reaction_counts?select=entry_id&limit=1" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY"
