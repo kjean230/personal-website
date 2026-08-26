@@ -108,8 +108,13 @@ jobs:
     name: Database migrations & RLS
     runs-on: ubuntu-latest
     # Isolated Postgres per run from Supabase's own image, so the RLS roles
-    # and platform schemas match the hosted project. Applies every migration
-    # and the seed from scratch, then runs the schema + RLS tests.
+    # and platform schemas match the hosted project, plus PostgREST in front
+    # of it (S4) so the query layer is exercised as `anon` through the same
+    # Data API server production uses. Applies every migration and both seeds
+    # from scratch, then runs the schema, RLS, content, and query-layer tests.
+    # Service containers share one Docker network: `postgrest` reaches `db` by
+    # label; the runner reaches both through the mapped ports. Mirrors
+    # docker-compose.yml — keep the two in step.
     services:
       db:
         image: supabase/postgres:17.6.1.165
@@ -122,6 +127,19 @@ jobs:
           --health-interval 2s
           --health-timeout 5s
           --health-retries 60
+      postgrest:
+        image: postgrest/postgrest:v16.2
+        env:
+          # `postgres`, not `authenticator` — see docker-compose.yml.
+          PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres
+          PGRST_DB_SCHEMAS: public
+          PGRST_DB_ANON_ROLE: anon
+          PGRST_DB_MAX_ROWS: "1000"
+          # Local-only, not a secret (see docker-compose.yml).
+          PGRST_JWT_SECRET: local-postgrest-jwt-secret-not-a-secret-0123456789
+          PGRST_DB_CHANNEL_ENABLED: "true"
+        ports:
+          - 54321:3000
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
     steps:
