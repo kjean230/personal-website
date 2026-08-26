@@ -48,16 +48,16 @@ Nothing structural — every value in brief §4's lists is accepted, and the tes
 - `links.kind = 'credential'` (one-line migration; the credential link stays `profile`) — whoever needs it first.
 - A `facet_counts` view (server-side counts) — only if a kind ever nears `max_rows`; the truncation guard throws before wrong counts could be served.
 - A CI drift check that regenerates `database.types.ts` — the `information_schema` test covers `entries`; a full diff would need the CLI + Docker in CI.
-- Keep-warm workflow and the BUILD_PLAN §7 Ops wording — owner decisions, unchanged (`handoff/chore-spine-hosted-config.md`).
+- ~~Keep-warm workflow and the BUILD_PLAN §7 Ops wording — owner decisions, unchanged (`handoff/chore-spine-hosted-config.md`).~~ — **done 2026-08-26 (chore/spine-s4-closeout):** `.github/workflows/keep-warm.yml` added and the §7 Ops / brief §9 wording applied.
 - `Skills.csv` / `Courses.csv` / Profile content → `lane/content` (Pair 3).
 - **The twelve seed edits and the one-time hosted load** — still open; the hosted project has **0 content rows** and was not read or written by this branch.
 - Admin-side `updateTag` / `revalidateContent()` wiring → `lane/admin`.
-- **S6 build environment**: the CI `build` and `lighthouse` jobs have no `NEXT_PUBLIC_SUPABASE_*` (S4 needs none — nothing in `app/` reads content). A prerendering route in S6 will need the two public values as repository **variables** (`vars.*`, not secrets) or a per-route rendering decision; and each such route inherits the 3600 s ISR window unless it declares otherwise (see caching).
+- ~~**S6 build environment**: the CI `build` and `lighthouse` jobs have no `NEXT_PUBLIC_SUPABASE_*` (S4 needs none — nothing in `app/` reads content). A prerendering route in S6 will need the two public values as repository **variables** (`vars.*`, not secrets) or a per-route rendering decision;~~ — **done 2026-08-26 (chore/spine-s4-closeout):** both values are repository variables, passed to the `build` and `lighthouse` jobs as `env`. Still true: each prerendering route inherits the 3600 s ISR window unless it declares otherwise (see caching).
 
 ## Open questions for owner
-1. Confirm the 3600 s content cache window (one constant, `CONTENT_REVALIDATE_SECONDS`).
-2. For S6: add `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` as GitHub repository variables (public values, same as Vercel) so the CI build can prerender, or tell S6 to render those routes dynamically. Your call; S5 can plan either way.
-3. The seed edits and hosted load stand as recorded in `handoff/chore-spine-s3-closeout.md`; until then every renderer sees an empty hosted site.
+1. ~~Confirm the 3600 s content cache window (one constant, `CONTENT_REVALIDATE_SECONDS`).~~ — **done 2026-08-26 (chore/spine-s4-closeout): owner confirmed, 3600 s kept.**
+2. ~~For S6: add `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` as GitHub repository variables (public values, same as Vercel) so the CI build can prerender, or tell S6 to render those routes dynamically. Your call; S5 can plan either way.~~ — **done 2026-08-26 (chore/spine-s4-closeout): repository variables added; prerender is possible in CI.**
+3. The seed edits and hosted load stand as recorded in `handoff/chore-spine-s3-closeout.md`; until then every renderer sees an empty hosted site. *(Still open on 2026-08-26: the seed was unchanged in the working tree when chore/spine-s4-closeout ran, so no load happened.)*
 
 ## Next
 S5 — `feat/spine-routes` on `lane/spine`: the shared route table both renderers bind to, written against the contract above (`listSection` per section, `getEntryBySlug` per entry URL, `getFacetCounts` for chips, `listTrophies` for the trophy case). Not started.
