@@ -200,7 +200,7 @@ Copy into every lane → main PR. Unticked items block the merge.
 
 **Ops**
 
-- [ ] Green CI, preview deploy live on an isolated database branch
+- [ ] Green CI including the database job (migrations + RLS tests on a fresh database per run); preview deploy live. Supabase Branching is not used (Free plan); previews share the hosted project.
 - [ ] Upstream failure cannot break a page render
 
 ---

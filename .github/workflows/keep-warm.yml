@@ -1,0 +1,37 @@
+# Keep the hosted Supabase project awake (chore/spine-s4-closeout).
+#
+# Free-plan projects pause after ~7 days of low database activity; "a few
+# user requests to the database each day" keep them alive (verified in S2,
+# handoff/feat-spine-schema.md). Until the site has traffic this one daily
+# read is that activity. It reads the aggregate `reaction_counts` view as
+# `anon` — the one public read path brief §7 allows — using the two public
+# repository variables (the same values Vercel holds; not secrets), and
+# touches nothing else.
+#
+# TEMPORARY: Pair 1's ingestion cron (lane/ingestion, feat/ingest-scheduling)
+# queries the database nightly and makes this redundant — delete this file
+# when that lands. Deliberately not part of CI green's `needs`.
+
+name: Keep warm
+
+on:
+  schedule:
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    name: Read reaction_counts as anon
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      # Block scalar: the header values contain ": ", which a plain YAML
+      # scalar would read as a mapping.
+      - run: |
+          curl --fail -s "$SUPABASE_URL/rest/v1/reaction_counts?select=entry_id&limit=1" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY"

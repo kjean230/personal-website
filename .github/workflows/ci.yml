@@ -76,6 +76,13 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    # The two public Supabase values (repository *variables*, not secrets —
+    # the same ones Vercel holds) so a route that reads content while
+    # prerendering can build here. Only the build and Lighthouse jobs get
+    # them; nothing else in CI talks to the hosted project.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -88,6 +95,9 @@ jobs:
   lighthouse:
     name: Lighthouse budget
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
