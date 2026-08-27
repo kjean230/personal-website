@@ -15,13 +15,13 @@
 - None against the plan. Against the task text: its bracketed fields ("[edited / not yet edited]", item 5's "[Delete this item if you are not ready]") were left unfilled. Resolved from the repository instead of guessing: the seed is unchanged since PR #10, so it was treated as *not edited* and item 5 as deleted. If edits exist somewhere other than this working tree, they are not in the repo.
 
 ## Deferred
-- Owner edits to `supabase/seed.content.sql` — all 12 items in `handoff/feat-spine-linkedin-import.md` "Open questions" remain open.
-- One-time hosted load of the edited seed (`psql "$DATABASE_URL" -f supabase/seed.content.sql` with `DATABASE_URL` parsed from the git-ignored `.env`, then an allowlisted row-count check) — after the edits, before S6's preview. Not done here because the seed is unedited.
+- ~~Owner edits to `supabase/seed.content.sql` — all 12 items in `handoff/feat-spine-linkedin-import.md` "Open questions" remain open.~~ — **done 2026-08-27 (chore/spine-hosted-seed):** all 12 decided and merged in PR #15 (`14be8b5`).
+- ~~One-time hosted load of the edited seed (`psql "$DATABASE_URL" -f supabase/seed.content.sql` with `DATABASE_URL` parsed from the git-ignored `.env`, then an allowlisted row-count check) — after the edits, before S6's preview. Not done here because the seed is unedited.~~ — **done 2026-08-27 (chore/spine-hosted-seed):** 19 rows on hosted, count check and idempotent re-run clean; see `handoff/chore-spine-hosted-seed.md`.
 - Unchanged owner decisions: keep-warm workflow; BUILD_PLAN §7 Ops wording (`handoff/chore-spine-hosted-config.md` open questions 1–2).
 - `links.kind` `credential` value (one-line migration, whoever needs it first); `Skills.csv` / `Courses.csv` / Profile content → `lane/content`.
 
 ## Open questions for owner
-1. Edit the seed per the S3 handoff list, then say so — the hosted load is a one-command chore, or run it yourself as above. Until then the deployed site has no content rows, which S6 will make visible.
+1. ~~Edit the seed per the S3 handoff list, then say so — the hosted load is a one-command chore, or run it yourself as above. Until then the deployed site has no content rows, which S6 will make visible.~~ — **done 2026-08-27 (chore/spine-hosted-seed):** seed edited (PR #15) and loaded; hosted holds 19 content rows.
 2. Nothing else new; the keep-warm and §7-wording decisions stand as recorded.
 
 ## Next
