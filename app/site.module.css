@@ -1,0 +1,152 @@
+/* site.module.css — the S5 route skeleton: site header, section pages, entry
+ * pages. Every value is a token var() (see app.css header); nothing here is
+ * presentation beyond legible, keyboard-operable semantic HTML with ≥44px
+ * targets. S6 (recruiter render) and S7 (console shell) replace or wrap it.
+ */
+
+.header {
+  border-bottom: var(--border-hairline);
+}
+
+.siteNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-6);
+}
+
+.siteLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-2);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.siteLink:hover {
+  text-decoration: underline;
+}
+
+.main {
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-16);
+}
+
+.heading {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.subheading {
+  margin: var(--space-8) 0 var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Facet chips (brief §4.2): pill-shaped, one active at a time. */
+.chips {
+  margin: 0 0 var(--space-6);
+}
+
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-4);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.chip[aria-current="page"] {
+  border-color: var(--color-border-strong);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* Entry lists: one link per row, meta beside it. */
+.entryList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  min-height: var(--size-touch-min);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-hairline);
+}
+
+.entryLink {
+  display: inline-block;
+  padding: var(--space-1) 0;
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* Entry page. */
+.article {
+  display: block;
+}
+
+.crumb {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.crumb a {
+  display: inline-block;
+  padding: var(--space-1) 0;
+  color: var(--color-text-muted);
+}
+
+.summary {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-lg);
+}
+
+.related {
+  margin-top: var(--space-4);
+}
