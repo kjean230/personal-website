@@ -1,6 +1,6 @@
 # Handoff — feat/spine-routes
 
-**Merged into:** `lane/spine`
+**Merged into:** `lane/spine` — PR #17, squash `d3890d4`, 2026-08-27 21:00 UTC, every CI job green including the Lighthouse job now auditing `/experience` against the hosted project (recorded by `chore/spine-s5-closeout`; see `handoff/chore-spine-s5-closeout.md` for the merged-head verification and the preview smoke).
 **Plan row:** BUILD_PLAN §4, S5 — **The shared route table.** Written before either renderer exists. Both modes bind to it. This is the artifact brief §8 requires lanes 5 and 6 to agree on.
 
 ## Shipped
