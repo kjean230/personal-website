@@ -2,10 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   getEntryBySlug,
   getFacetCounts,
+  listLinks,
   listSection,
   listTrophies,
 } from "../../lib/content/queries";
-import { loadEntry, loadSection, type RouteQueries } from "../../lib/routes/load";
+import { loadEntry, loadResume, loadSection, type RouteQueries } from "../../lib/routes/load";
 import { SECTIONS, entryHref, sectionForKind, sectionFromSegment } from "../../lib/routes/table";
 import { awaitPostgrest, createPool, createTestClient } from "./harness";
 
@@ -28,6 +29,7 @@ const queries: RouteQueries = {
   getFacetCounts: (kind) => getFacetCounts(kind, client),
   getEntryBySlug: (slug) => getEntryBySlug(slug, client),
   listTrophies: () => listTrophies(client),
+  listLinks: () => listLinks(client),
 };
 const slug: Record<keyof typeof CONTENT, string> = { btt: "", project: "", certification: "" };
 
@@ -147,5 +149,43 @@ describe("section routes", () => {
 
   it("is not-found for a slug no entry has", async () => {
     expect(await loadEntry(section("experience"), "no-such-slug", queries)).toEqual({ kind: "not-found" });
+  });
+});
+
+describe("/resume", () => {
+  it("lists the four sections in resume order, each matching its query, with links grouped by entry", async () => {
+    const page = await loadResume(queries);
+    expect(page.sections.map((s) => s.label)).toEqual([
+      "Experience",
+      "Projects",
+      "Education",
+      "Certifications & awards",
+    ]);
+
+    const expected = [
+      await listSection("experience", {}, client),
+      await listSection("project", {}, client),
+      await listSection("education", {}, client),
+      await listTrophies(client),
+    ];
+    expect(page.sections.map((s) => s.entries.map((row) => row.entry.id))).toEqual(
+      expected.map((rows) => rows.map((row) => row.id)),
+    );
+
+    // Every link the resume shows hangs off its own entry, and no link that
+    // belongs to a listed entry is dropped on the way through the grouping.
+    for (const section of page.sections) {
+      for (const row of section.entries) {
+        for (const link of row.links) expect(link.entry_id).toBe(row.entry.id);
+      }
+    }
+    const listed = new Set(page.sections.flatMap((s) => s.entries.map((row) => row.entry.id)));
+    const shown = page.sections.flatMap((s) => s.entries.flatMap((row) => row.links.map((l) => l.id)));
+    const expectedLinks = (await listLinks(client)).filter((l) => listed.has(l.entry_id));
+    expect(new Set(shown)).toEqual(new Set(expectedLinks.map((l) => l.id)));
+
+    // Brief §4.1: the certification's one `profile` link is its credential.
+    const certification = page.sections[3].entries.find((row) => row.entry.id === CONTENT.certification);
+    expect(certification?.links.map((l) => l.kind)).toEqual(["profile"]);
   });
 });

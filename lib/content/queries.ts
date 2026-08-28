@@ -1,6 +1,7 @@
 /**
  * lib/content/queries.ts — the query layer (S4, BUILD_PLAN §4): tile row,
- * detail, facet counts, relation traversal.
+ * detail, facet counts, relation traversal, and every link at once (S6, for
+ * `/resume`).
  *
  * These are the shapes S5 (route table), S6 (recruiter render), S7 (console
  * tile) and S8 (trophy case) build on. Every function reads through the anon
@@ -266,6 +267,23 @@ export async function getEntryBySlug(
     tags: tags.map((tag) => parseRow(tagSchema, "tag", tag)).sort((a, b) => a.slug.localeCompare(b.slug)),
     relations: await listRelated(entry.id, client),
   };
+}
+
+// Links ---------------------------------------------------------------------
+
+/**
+ * Every `links` row in one request, for a page that renders many entries'
+ * links at once (`/resume`). `getEntryBySlug` already embeds an entry's own
+ * links, so this exists only so the resume does not need one detail request
+ * per row; group the result by `entry_id`.
+ * @returns every link, ordered by entry then label.
+ */
+export async function listLinks(client: ContentClient = getAnonClient()): Promise<Link[]> {
+  const rows = complete(
+    "listLinks",
+    await client.from("links").select("*", { count: "exact" }).order("entry_id").order("label"),
+  );
+  return rows.map((row) => parseRow(linkSchema, "link", row));
 }
 
 // Trophy case ---------------------------------------------------------------

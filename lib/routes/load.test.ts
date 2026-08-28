@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ContentQueryError, type EntryDetail, type FacetCounts, type Trophy } from "../content/queries";
-import { FACETS, type EntrySummary, type Facet, type Kind } from "../content/schema";
-import { loadEntry, loadSection, loadTrophies, type RouteQueries } from "./load";
+import { FACETS, type EntrySummary, type Facet, type Kind, type Link } from "../content/schema";
+import { loadEntry, loadResume, loadSection, loadTrophies, type RouteQueries } from "./load";
 import { sectionFromSegment } from "./table";
 
 // The loaders bind URLs to the S4 query contract. Every query here is a fake
@@ -67,6 +67,7 @@ describe("loadSection", () => {
       getFacetCounts: vi.fn(async () => counts({ corporate: 1, research: 4, classroom: 3 }, 2)),
       getEntryBySlug: unused,
       listTrophies: unused,
+      listLinks: unused,
     };
     const page = await loadSection(section("experience"), undefined, queries);
     expect(queries.listSection).toHaveBeenCalledWith("experience", { facet: undefined });
@@ -86,6 +87,7 @@ describe("loadSection", () => {
       getFacetCounts: vi.fn(async () => counts({ corporate: 1, research: 4 })),
       getEntryBySlug: unused,
       listTrophies: unused,
+      listLinks: unused,
     };
     const page = await loadSection(section("experience"), "research", queries);
     expect(queries.listSection).toHaveBeenCalledWith("experience", { facet: "research" });
@@ -104,6 +106,7 @@ describe("loadSection", () => {
       getFacetCounts: async () => counts({}),
       getEntryBySlug: unused,
       listTrophies: unused,
+      listLinks: unused,
     };
     const page = await loadSection(section("now"), undefined, queries);
     expect(page.entries).toEqual([]);
@@ -119,6 +122,7 @@ describe("loadSection", () => {
       getFacetCounts: async (kind) => (kind === "hobby" ? counts({ volunteer: 1 }, 1) : counts({ volunteer: 2 })),
       getEntryBySlug: unused,
       listTrophies: unused,
+      listLinks: unused,
     };
     const page = await loadSection(section("hobbies"), undefined, queries);
     expect(page.entries.map((row) => row.slug)).toEqual(["music", "knicks", "basketball"]);
@@ -136,6 +140,7 @@ describe("loadSection", () => {
       getFacetCounts: async () => counts({ classroom: 1 }, 1),
       getEntryBySlug: unused,
       listTrophies: vi.fn(async () => [award, cert]),
+      listLinks: unused,
     };
     const all = await loadSection(section("certifications"), undefined, queries);
     expect(all.entries).toEqual([award, cert]);
@@ -163,6 +168,7 @@ describe("loadSection", () => {
       getFacetCounts: async () => counts({}),
       getEntryBySlug: unused,
       listTrophies: unused,
+      listLinks: unused,
     };
     await expect(loadSection(section("experience"), undefined, queries)).rejects.toBe(failure);
   });
@@ -178,6 +184,7 @@ describe("loadEntry", () => {
     getFacetCounts: unused,
     getEntryBySlug: vi.fn(async () => detail),
     listTrophies: unused,
+    listLinks: unused,
   });
 
   it("is not-found when no entry has the slug", async () => {
@@ -227,5 +234,84 @@ describe("loadEntry", () => {
       ["outgoing", "part_of", "/experience/break-through-tech"],
       ["incoming", "related_to", "/certifications/machine-learning-foundations"],
     ]);
+  });
+});
+
+describe("loadResume", () => {
+  // `tile()` gives every fake row the same id and the resume groups links by
+  // `entry_id`, so distinct ids are what make the grouping assertions mean
+  // anything — with the default id every link would land on every entry.
+  const entryId = (n: number) => `00000000-0000-4000-8000-00000000010${n}`;
+  const guardian = tile({ kind: "experience", slug: "guardian", id: entryId(1) });
+  const classifier = tile({ kind: "project", slug: "airbnb-superhost-classifier", id: entryId(2) });
+  const degree = tile({ kind: "education", slug: "fordham-cs", id: entryId(3) });
+  const cert = tile({ kind: "certification", slug: "machine-learning-foundations", id: entryId(4) }) as Trophy;
+
+  const link = (n: number, entry: EntrySummary, label: string): Link => ({
+    id: `00000000-0000-4000-8000-00000000020${n}`,
+    entry_id: entry.id,
+    label,
+    url: "https://example.com/credential",
+    kind: "profile",
+  });
+
+  const queriesWith = (links: Link[], education: EntrySummary[] = [degree]): RouteQueries => ({
+    listSection: vi.fn(async (kind: Kind) => {
+      if (kind === "experience") return [guardian];
+      if (kind === "project") return [classifier];
+      return education;
+    }),
+    getFacetCounts: unused,
+    getEntryBySlug: unused,
+    listTrophies: vi.fn(async () => [cert]),
+    listLinks: vi.fn(async () => links),
+  });
+
+  it("lists the four sections in resume order, reading the trophy case for the last", async () => {
+    const queries = queriesWith([]);
+    const page = await loadResume(queries);
+    expect(page.sections.map((s) => [s.id, s.label])).toEqual([
+      ["experience", "Experience"],
+      ["projects", "Projects"],
+      ["education", "Education"],
+      ["certifications", "Certifications & awards"],
+    ]);
+    expect(page.sections.map((s) => s.entries.map((row) => row.entry.slug))).toEqual([
+      ["guardian"],
+      ["airbnb-superhost-classifier"],
+      ["fordham-cs"],
+      ["machine-learning-foundations"],
+    ]);
+    expect(queries.listSection).toHaveBeenCalledTimes(3);
+    for (const kind of ["experience", "project", "education"] as const) {
+      expect(queries.listSection).toHaveBeenCalledWith(kind, {});
+    }
+    expect(queries.listTrophies).toHaveBeenCalledTimes(1);
+  });
+
+  it("attaches each entry's own links from the one listLinks call", async () => {
+    const credential = link(1, cert, "View credential");
+    const repo = link(2, classifier, "Repository");
+    const page = await loadResume(queriesWith([repo, credential]));
+    const byEntry = Object.fromEntries(
+      page.sections.flatMap((s) => s.entries.map((row) => [row.entry.slug, row.links])),
+    );
+    expect(byEntry["machine-learning-foundations"]).toEqual([credential]);
+    expect(byEntry["airbnb-superhost-classifier"]).toEqual([repo]);
+    expect(byEntry.guardian).toEqual([]);
+    expect(byEntry["fordham-cs"]).toEqual([]);
+  });
+
+  it("keeps every link of an entry that has more than one, in the order the query returned", async () => {
+    const first = link(3, guardian, "Company");
+    const second = link(4, guardian, "Profile");
+    const page = await loadResume(queriesWith([first, second]));
+    expect(page.sections[0].entries[0].links).toEqual([first, second]);
+  });
+
+  it("keeps an empty section, so the page still renders its heading", async () => {
+    const page = await loadResume(queriesWith([], []));
+    expect(page.sections).toHaveLength(4);
+    expect(page.sections[2]).toEqual({ id: "education", label: "Education", entries: [] });
   });
 });

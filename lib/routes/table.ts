@@ -18,8 +18,9 @@
  * /<section>/<slug>      getEntryBySlug(slug)                   the entry's canonical URL; null → 404;
  *                                                               a slug reached under the wrong section
  *                                                               308s to its canonical URL
- * /resume                —                                      plain HTML, one action from anywhere
- *                                                               (the site header links it)
+ * /resume                listSection(experience | project |     plain HTML, one action from anywhere
+ *                        education) · listTrophies() ·          (the site header links it); reads no
+ *                        listLinks()                            dynamic input, so it prerenders
  * /privacy               —                                      reserved: brief §2.3, Phase 3 hardening
  * /admin                 —                                      reserved: lane/admin (Supabase Auth)
  *

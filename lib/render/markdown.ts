@@ -17,10 +17,10 @@
  * h2 under the page's single h1 — axe's `heading-order` rule fails a jump of
  * more than one level.
  *
- * Server-only. Nothing in this sub-branch is a client component (S6 ships no
- * `"use client"`), and this module must never be imported from one: it would
- * put `marked` in the browser bundle and spend the lighthouserc.json script
- * budget on work the server already did.
+ * Server-only. S6 ships no client components at all, and this module must
+ * never be imported into one: that would put `marked` in the browser bundle
+ * and spend the lighthouserc.json script budget on work the server has
+ * already done.
  */
 
 import { Marked, type Token, type Tokens } from "marked";
