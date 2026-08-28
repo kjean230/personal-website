@@ -6,6 +6,7 @@
       "url": [
         "http://localhost:3000/",
         "http://localhost:3000/experience",
+        "http://localhost:3000/experience/break-through-tech",
         "http://localhost:3000/resume"
       ],
       "numberOfRuns": 3

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   getEntryBySlug,
   getFacetCounts,
+  listLinks,
   listRelated,
   listSection,
   listTrophies,
@@ -175,6 +176,24 @@ describe("trophy case", () => {
       expect(trophies.filter((trophy) => trophy.metadata.category === category)).toHaveLength(n);
     }
     expect(trophies.every((trophy) => ["unlocked", "in_progress", "archived"].includes(trophy.status))).toBe(true);
+  });
+});
+
+describe("links", () => {
+  it("reads every link once, ordered by entry then label, and parses all of them", async () => {
+    const { rows } = await pool.query<{ id: string }>(
+      `select id from public.links order by entry_id, label, id`,
+    );
+    const links = await listLinks(client);
+    expect(links.map((link) => link.id)).toEqual(rows.map((row) => row.id));
+    expect(links.every((link) => /^https?:\/\//.test(link.url))).toBe(true);
+
+    // Brief §4.1: the certification's single `profile` link is in the flat
+    // list too, on the same entry the detail query hangs it off.
+    const credential = links.filter((link) => link.entry_id === CONTENT.certification);
+    expect(credential.map((link) => link.kind)).toEqual(["profile"]);
+    const detail = await getEntryBySlug(slug.certification, client);
+    expect(credential.map((link) => link.id)).toEqual(detail?.links.map((link) => link.id));
   });
 });
 

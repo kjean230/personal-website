@@ -5,10 +5,11 @@
  * (lib/content/queries.ts) and nothing else: `loadSection` for `/<section>`
  * (`listSection` per kind + `getFacetCounts` for the chips, `listTrophies`
  * for the trophy case), `loadEntry` for `/<section>/<slug>`
- * (`getEntryBySlug`). Loaders are framework-free: they return discriminated
- * results and the page files map them to `notFound()` / `permanentRedirect()`,
- * so the loaders are unit-testable with fake queries and the same functions
- * serve both renderers.
+ * (`getEntryBySlug`), `loadResume` for `/resume` (three `listSection` calls,
+ * `listTrophies` and `listLinks`). Loaders are framework-free: they return
+ * discriminated results and the page files map them to `notFound()` /
+ * `permanentRedirect()`, so the loaders are unit-testable with fake queries
+ * and the same functions serve both renderers.
  *
  * Errors are never swallowed: a `ContentQueryError` or
  * `ContentValidationError` from the query layer propagates and fails the
@@ -19,21 +20,28 @@ import {
   compareRecency,
   getEntryBySlug,
   getFacetCounts,
+  listLinks,
   listSection,
   listTrophies,
   type EntryDetail,
   type Trophy,
 } from "../content/queries";
-import type { EntrySummary, Facet } from "../content/schema";
+import type { EntrySummary, Facet, Link } from "../content/schema";
 import { FACET_ORDER, entryHref, sectionForKind, sectionHref, type Section } from "./table";
 
 /** The queries a loader may call. Typed against the S4 module so a contract change fails `tsc` here. */
 export type RouteQueries = Pick<
   typeof import("../content/queries"),
-  "listSection" | "getFacetCounts" | "getEntryBySlug" | "listTrophies"
+  "listSection" | "getFacetCounts" | "getEntryBySlug" | "listTrophies" | "listLinks"
 >;
 
-const defaultQueries: RouteQueries = { listSection, getFacetCounts, getEntryBySlug, listTrophies };
+const defaultQueries: RouteQueries = {
+  listSection,
+  getFacetCounts,
+  getEntryBySlug,
+  listTrophies,
+  listLinks,
+};
 
 // Section -------------------------------------------------------------------
 
@@ -111,6 +119,70 @@ export async function loadTrophies(
   queries: RouteQueries = defaultQueries,
 ): Promise<Trophy[]> {
   return narrowTrophies(await queries.listTrophies(), facet);
+}
+
+// Resume --------------------------------------------------------------------
+
+/** One resume row: a tile row and the entry's external links. */
+export interface ResumeEntry {
+  readonly entry: EntrySummary;
+  readonly links: readonly Link[];
+}
+
+export interface ResumeSection {
+  /** Stable, slug-shaped; the page uses it as the `aria-labelledby` target. */
+  readonly id: string;
+  readonly label: string;
+  /** In tile order (`compareRecency`), the same order the section pages use. Empty is normal. */
+  readonly entries: readonly ResumeEntry[];
+}
+
+export interface ResumePage {
+  readonly sections: readonly ResumeSection[];
+}
+
+/** Brief §2.2's plain resume: these four, in this order. Labels are the resume's, not the route table's. */
+const RESUME_SECTIONS = [
+  { id: "experience", label: "Experience" },
+  { id: "projects", label: "Projects" },
+  { id: "education", label: "Education" },
+  { id: "certifications", label: "Certifications & awards" },
+] as const;
+
+/**
+ * Everything `/resume` renders. Unlike the other loaders this one cannot
+ * fail to resolve — `/resume` is a fixed URL with no segment and no query —
+ * so it returns the page directly rather than a discriminated result.
+ *
+ * Links come from one `listLinks()` grouped by `entry_id` rather than a
+ * detail request per row: the resume lists every entry, and 19 round trips to
+ * render one page would defeat the hourly fetch cache.
+ * @returns the four sections in resume order, each in tile order; a section with no rows is still present.
+ */
+export async function loadResume(queries: RouteQueries = defaultQueries): Promise<ResumePage> {
+  const [experience, projects, education, certifications, links] = await Promise.all([
+    queries.listSection("experience", {}),
+    queries.listSection("project", {}),
+    queries.listSection("education", {}),
+    queries.listTrophies(),
+    queries.listLinks(),
+  ]);
+
+  const byEntry = new Map<string, Link[]>();
+  for (const link of links) {
+    const existing = byEntry.get(link.entry_id);
+    if (existing) existing.push(link);
+    else byEntry.set(link.entry_id, [link]);
+  }
+
+  const rows: readonly (readonly EntrySummary[])[] = [experience, projects, education, certifications];
+  return {
+    sections: RESUME_SECTIONS.map((section, index) => ({
+      id: section.id,
+      label: section.label,
+      entries: rows[index].map((entry) => ({ entry, links: byEntry.get(entry.id) ?? [] })),
+    })),
+  };
 }
 
 // Entry ---------------------------------------------------------------------
