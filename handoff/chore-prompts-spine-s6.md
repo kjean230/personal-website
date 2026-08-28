@@ -1,0 +1,33 @@
+# Handoff — chore/prompts-spine-s6
+
+**Merged into:** `lane/spine`
+**Plan row:** none — a documentation chore between S5 and S6: the session prompts for the rest of the spine, committed to `PROMPTS.md` before they run. No app code, no schema change, no migration, no seed change, no dependencies.
+
+## Shipped
+- **`PROMPTS.md` gains four sections** between `## Session 2 — after you pick` and `## Stop rule`, nothing else in the file touched:
+  - **Sessions S1–S5** — one paragraph recording that those prompts were pasted, not committed, and that their handoffs are the record; from S6 on, each block is committed here before it runs.
+  - **Session — S6 `feat/spine-recruiter`** — fully detailed and immediately runnable. Template scaffolding unchanged (Context, Precedence, Out of scope, Done when, Tripwire, Blockers verbatim); the bracketed fields carry the state on 2026-08-27 (`main` `a8eca69`, `origin/lane/spine` `9edb3ca`, the local `feat/spine-recruiter` with zero commits, hosted 19 / 3 / 1 / 0 / 0), a read-first list by path, the branch fast-forward check, what "SSR section index + detail page · JS disabled · plain `/resume`" means on the S5 skeleton (index rows, entry page fields, the `date_precision` helper, `/resume` through a new `loadResume` loader, rendering modes), eight decisions already made, the per-line constraints, and the verification list with the S5 baselines (test 90, db:test 62, script 136 KB) and the smoke URLs S5 proved.
+  - **Session — S7 `feat/spine-console-tile`** and **Session — S8 `feat/spine-trophy`** — pre-filled blocks with the same scaffolding, each preceded by the plan-silent gaps the owner settles before pasting: S7's shell-code location and renderer selection at the same URL (recommended answers given), S8's `status` → trophy-state mapping (S2's fixture reading, `archived` → locked, to confirm).
+  - **After S8 — the spine gate** — what the `lane/spine → main` merge requires (§4 acceptance, §7 checklist) and what changes the moment it lands: `ci.yml` / `keep-warm.yml` / `dependabot.yml` reach the default branch, the Supabase GitHub integration runs against migrations already applied by hand, Vercel's first real Production deploy, lanes cut from the new `main`.
+- **Owner decisions recorded in the S6 block (taken in plan mode, 2026-08-27):** `/resume` is entries only with no contact block (contact line → `feat/recruiter-resume-print`) · one server-only markdown dependency allowed under stated conditions · media unrendered until `feat/admin-media` · empty sections stay linked (S7 decides tiles) · the SSO-gated Vercel preview counts as live when the deployment succeeds · merged local branches stay · education keeps `facet = null` · no query-layer change without stopping · `/resume` prerenders (so `next build` now needs the two public variables, which CI, Vercel and `.env` already carry — CLAUDE.md's sentence to be updated by S6).
+- Cross-reference sweep over the new text: every backticked path resolves in the tree (the `handoff/feat-spine-recruiter.md`, `-console-tile.md`, `-trophy.md` names are the files those sessions will create, referenced as such); every `§n` names a real section of the brief or plan; prohibited-term grep over the diff clean; no secret shape.
+
+## Deviated from plan
+- None against the plan. Against the owner's stated choice: the prompt was to reach `PROMPTS.md` "via a chore PR to `main`". `main` is still the Phase 0 merge — no `.github/`, no `package.json` — so a branch cut from it carries no workflow, the required `CI green` check never reports, and the PR can never merge. `PROMPTS.md` is byte-identical on `main` and `lane/spine`, so this chore targets `lane/spine` with auto-merge, as every docs chore since S1 has, and reaches `main` with the spine.
+
+## Deferred
+- The bracketed `[OWNER: …]` fields in the S7 and S8 blocks are filled by the owner before each session, not by an agent.
+- Unchanged from earlier handoffs: delete `.github/workflows/keep-warm.yml` when Pair 1's ingestion cron lands · `links.kind = 'credential'` migration · facet-count view · generated-types drift check in CI · `Skills.csv` / `Courses.csv` / Profile → `lane/content` · admin `updateTag` / `revalidateContent()` wiring → `lane/admin`.
+- Unchanged from `handoff/feat-spine-routes.md`: `alternates.canonical` / sitemap / OG / structured data → `feat/recruiter-seo` · `app/not-found.tsx` and error boundaries → Phase 3 · facet as a path segment only if `/[section]` must be static.
+- **Owner notes carried forward, unchanged, not acted on:**
+  - Whether `education` earns a sixth facet value — evaluate later; affects brief §4 and the S4 Zod enum (`FACETS` in `lib/content/schema.ts`). Both education rows keep `facet = null` and their `-- REVIEW` note.
+  - Coursework (CS/DS classes) as their own entries — `lane/content`.
+  - An admin control to flip `status` / `end_date` / `is_current` when the degrees and BTT finish; `is_current` and `status` overlap and one should be named the source of truth.
+
+## Open questions for owner
+1. **Make the documented load command true on this machine** (carried from `handoff/chore-spine-hosted-seed.md`): install `libpq` (`brew install libpq`, `psql` on PATH), or amend the CLAUDE.md Database bullet to name the pooler/container transport. Not changed here.
+2. **Merged local branches** (carried from `handoff/chore-spine-s5-closeout.md`): six `chore/*` plus `feat/spine-routes` — delete or keep? Left in place.
+3. Questions 2 (empty sections) and 3 (Vercel preview protection) from the S5 close-out are **answered for S6** in its block (keep linked; SSO-gated preview counts as live). Whether to add a Protection Bypass secret so a future close-out can smoke the preview is still yours.
+
+## Next
+S6 — `feat/spine-recruiter` on `lane/spine`. After this PR merges: `/clear`, then in a fresh session `git fetch origin`, fast-forward the local `feat/spine-recruiter` to `origin/lane/spine` (`git merge --ff-only`), and paste the `## Session — S6` block from `PROMPTS.md`. Not started.
