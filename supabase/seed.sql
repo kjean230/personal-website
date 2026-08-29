@@ -54,7 +54,10 @@ values
    '2024-08-31', null, false, 'unlocked', null, null,
    false, 30, '{"fixture": true}'),
 
-  -- trophy states: in_progress and archived (rendered as locked)
+  -- trophy states: in_progress and archived, so all three states exist locally.
+  -- Each status is its own state: archived renders as "Archived", never "Locked"
+  -- (S8 owner decision — an archived credential is one you earned that lapsed,
+  -- not one you never achieved). app/(explorer)/trophy.tsx is the mapping.
   ('00000000-0000-4000-8000-000000000105', 'certification', null,
    'fixture-credential-pending', 'Fixture credential in progress (placeholder)', 'Fixture issuer',
    'Placeholder credential being pursued.', null,

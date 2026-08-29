@@ -216,7 +216,7 @@ Ordered by when they block work.
 | Phase S3     | LinkedIn export file (Settings → Data Privacy → Get a copy of your data)   |
 | Phase S3 end | Edit the normalized BTT record for accuracy                                  |
 | Pair 1       | Steam profile set to public, or Steam ingestion is dropped                   |
-| Pair 1       | Domain name and registrar                                                    |
+| ~~Pair 1~~   | ~~Domain name and registrar~~ — **settled:** `kerwynjean.dev` (Porkbun). Canonical origin `https://kerwynjean.dev`; lands as `metadataBase` in `feat/recruiter-seo`. Vercel domain attach, DNS, auto-renew and 2FA remain the owner's to do. |
 | Pair 3       | Full entry inventory: orgs, dates, roles, links, which projects attach where |
 | Pair 3       | Sports teams and interests for Hobbies                                       |
 
