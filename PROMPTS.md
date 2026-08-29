@@ -1,4 +1,3 @@
-
 # Cowork Session Prompts
 
 `BUILD_BRIEF.md` and `BUILD_PLAN.md` are committed to the repo, and the repo copy is authoritative. Never paste them into a chat — agents read them from the repo. Each Cowork session gets one prompt from this file.
@@ -616,6 +615,7 @@ Blockers: ask. Do not invent content, names, dates, or assets.
 Not a session prompt; the one human merge (BUILD_PLAN §2, §7). A close-out chore verifies the merged lane head first-hand, then the owner opens the PR with the §7 checklist and signs it. Spine acceptance (§4): one BTT record in Experience, Projects and the trophy case with zero duplication · the same URL in both renderers · Recruiter path with JS disabled · keyboard through the tile row to a detail page with no trap · green CI, preview live.
 
 What changes the moment it merges, so nobody is surprised:
+
 - `.github/workflows/ci.yml`, `keep-warm.yml` and `dependabot.yml` reach `main`: the keep-warm daily schedule starts running (GitHub runs `schedule` only from the default branch) and Dependabot PRs begin.
 - The Supabase GitHub integration (working directory `.`, production branch `main`) applies `supabase/migrations` to the hosted project. Both migrations were already pushed by hand and are recorded in `supabase_migrations.schema_migrations`; verify it reports nothing to apply rather than assuming.
 - Vercel deploys `main` to Production for the first time with real routes.
