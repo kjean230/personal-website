@@ -40,4 +40,4 @@
 3. **Vercel Protection Bypass** secret for preview smokes (carried) — still yours.
 
 ## Next
-S6 — `feat/spine-recruiter` on `lane/spine`. After this PR merges: in a fresh session, `git fetch origin`, `git switch feat/spine-recruiter`, `git merge --ff-only origin/lane/spine`, then paste the `## Session — S6` block from `PROMPTS.md` (the amended one). Not started.
+S6 — `feat/spine-recruiter` on `lane/spine`. After this PR merges: in a fresh session, `git fetch origin`, `git switch feat/spine-recruiter`, `git merge --ff-only origin/lane/spine`, then paste the `## Session — S6` block from `PROMPTS.md` (the amended one). ~~Not started.~~ — **done 2026-08-28, PR #21, squash `09f8817`** (`handoff/feat-spine-recruiter.md`; merged head verified by `chore/spine-s6-closeout`).

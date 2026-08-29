@@ -30,4 +30,4 @@
 3. Questions 2 (empty sections) and 3 (Vercel preview protection) from the S5 close-out are **answered for S6** in its block (keep linked; SSO-gated preview counts as live). Whether to add a Protection Bypass secret so a future close-out can smoke the preview is still yours.
 
 ## Next
-S6 — `feat/spine-recruiter` on `lane/spine`. After this PR merges: `/clear`, then in a fresh session `git fetch origin`, fast-forward the local `feat/spine-recruiter` to `origin/lane/spine` (`git merge --ff-only`), and paste the `## Session — S6` block from `PROMPTS.md`. Not started.
+S6 — `feat/spine-recruiter` on `lane/spine`. After this PR merges: `/clear`, then in a fresh session `git fetch origin`, fast-forward the local `feat/spine-recruiter` to `origin/lane/spine` (`git merge --ff-only`), and paste the `## Session — S6` block from `PROMPTS.md`. ~~Not started.~~ — **done 2026-08-28, PR #21, squash `09f8817`** (`handoff/feat-spine-recruiter.md`; merged head verified by `chore/spine-s6-closeout`).
