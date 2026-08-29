@@ -81,6 +81,28 @@ export const HINT_ICONS = {
   b: read(readFileSync(join(process.cwd(), "design/assets/icons/hint-b.svg"), "utf8")),
 } as const;
 
+/**
+ * One trophy drawing per `entries.status` (S8) — keyed by the status itself, so
+ * `trophy.tsx` can index it with no second lookup table. The trophy case shows
+ * one of these per row, which is the duplicate-id case `inlineIcon` above is
+ * written for.
+ *
+ * `archived` is drawn by `trophy-locked.svg`, the same kind of mismatch as
+ * `now` → `tile-news.svg`: the *file* was named for brief §5's word, the
+ * *state* is named for the data. An archived credential is one that lapsed —
+ * one you earned — so it is not called "locked" in the UI, only drawn with the
+ * hollow cup. `trophy.tsx` owns that wording; this map owns the drawing.
+ *
+ * `trophy-unlocked.svg` is the one icon in the set carrying a literal colour,
+ * as DESIGN.md's `var(--color-*, #fallback)` form: it is the earned trophy, and
+ * a fill appears only for the unlocked item, inside its own 3 px stroke.
+ */
+export const TROPHY_ICONS = {
+  unlocked: read(readFileSync(join(process.cwd(), "design/assets/icons/trophy-unlocked.svg"), "utf8")),
+  in_progress: read(readFileSync(join(process.cwd(), "design/assets/icons/trophy-in-progress.svg"), "utf8")),
+  archived: read(readFileSync(join(process.cwd(), "design/assets/icons/trophy-locked.svg"), "utf8")),
+} as const;
+
 for (const section of SECTIONS) {
   if (!ICONS[section.segment]) throw new Error(`tiles: section "${section.segment}" has no icon`);
 }
