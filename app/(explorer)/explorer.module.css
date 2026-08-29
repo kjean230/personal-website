@@ -127,6 +127,34 @@
   border-color: var(--color-border-strong);
 }
 
+/* Trophy state on a trophy-case row (S8). Not a tile: the trophy case is the
+ * section index with the drawing and the state added, so the row keeps its own
+ * chrome and this is only the marker. No face, no --radius-sm, no --elevation-*.
+ *
+ * No colour of its own either. The state name inherits the meta line's
+ * --color-text-muted (an audited AA pair), and the only fill in sight is the
+ * one inside trophy-unlocked.svg — saffron, for the unlocked item alone,
+ * enclosed by the path's own 3px currentColor stroke. That is DESIGN.md's
+ * outline rule satisfied by the drawing rather than by a wrapper.
+ */
+.trophy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.trophyIcon {
+  display: block;
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+
+.trophyIcon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* Corner button hints (brief §2.1's borrowed grammar, this project's glyphs). */
 .hints {
   display: flex;

@@ -5,6 +5,7 @@ import { loadSection } from "@/lib/routes/load";
 import { HOME_HREF, entryHref, parseFacetParam, sectionFromSegment } from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
 import { KeyHints } from "../(explorer)/key-hints";
+import { TrophyState } from "../(explorer)/trophy";
 import { EntryDates } from "../entry-dates";
 import styles from "../site.module.css";
 
@@ -16,10 +17,14 @@ import styles from "../site.module.css";
 // bounds the database reads to one per hour per query.
 //
 // S6 renders the index proper on the S5 skeleton: each row is a heading link
-// to the entry's canonical URL with its subtitle, dates and summary. The row
-// keeps `data-status` and the trophy case keeps `category · status` as text —
-// S8 turns those into the locked / in_progress / unlocked states, and S7
+// to the entry's canonical URL with its subtitle, dates and summary, and S7
 // renders the same rows as the tile row at the same URL.
+//
+// S8 makes the trophy case (brief §5) a state rather than a word: on the one
+// section with `trophyCase`, the row's `status` becomes a drawing plus its name
+// (`(explorer)/trophy.tsx`). Nothing else about the row moves — same `<li>`,
+// same `data-status`, same href — because the recruiter index and the trophy
+// case are deliberately one markup, not two renderings to keep in sync.
 
 export async function generateMetadata({ params }: PageProps<"/[section]">): Promise<Metadata> {
   const section = sectionFromSegment((await params).section);
@@ -68,11 +73,15 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
               </h2>
               {entry.subtitle && <p className={styles.subtitle}>{entry.subtitle}</p>}
               <EntryDates entry={entry} />
-              {/* The trophy case names the category; elsewhere the status is
-                  only worth saying when it is not the plain `unlocked`. */}
-              {entry.kind === "certification" ? (
+              {/* The trophy case shows the state as a drawing plus its name and
+                  then the category; elsewhere the status is only worth saying
+                  when it is not the plain `unlocked`. The `kind` check is what
+                  narrows `metadata.category`, and `trophyCase` is what says why
+                  we are drawing a trophy — /certifications is the only section
+                  where both are true. */}
+              {section.trophyCase && entry.kind === "certification" ? (
                 <p className={styles.meta}>
-                  {entry.metadata.category} · {statusText(entry.status)}
+                  <TrophyState status={entry.status} /> · {entry.metadata.category}
                 </p>
               ) : (
                 entry.status !== "unlocked" && <p className={styles.meta}>{statusText(entry.status)}</p>
