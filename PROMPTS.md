@@ -390,6 +390,12 @@ Verification before the PR, all recorded in the handoff with numbers:
     /experience/break-through-tech and /resume in headless Chrome with
     scripts disabled (`--blink-settings=scriptEnabled=false`) and confirm the
     same. Note that `grep -rn "use client" app lib` is empty.
+    [Corrected 2026-08-28 by `chore/spine-s6-closeout`: that flag emits ZERO
+    BYTES in the installed Chrome — both `--dump-dom` and `--screenshot`, old
+    and new headless. Use S6's replacement, which is stricter because the
+    scripts are absent rather than merely inert: fetch the served HTML, strip
+    every `<script>` tag, insert `<base href="http://localhost:PORT/">`, write
+    to the scratchpad, and render the `file://` copy headless.]
   - Lighthouse locally: `npx lhci autorun` — a11y 1.0 on every audited URL is
     the CI gate. You may add http://localhost:3000/experience/break-through-tech
     to lighthouserc.json so the new detail markup is gated; change no budget.
