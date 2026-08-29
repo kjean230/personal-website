@@ -7,6 +7,7 @@ import { renderMarkdown } from "@/lib/render/markdown";
 import { loadEntry, type RelatedLink } from "@/lib/routes/load";
 import { sectionFromSegment, sectionHref } from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
+import { KeyHints } from "../../(explorer)/key-hints";
 import { EntryDates } from "../../entry-dates";
 import styles from "../../site.module.css";
 
@@ -187,6 +188,9 @@ export default async function EntryPage({ params }: PageProps<"/[section]/[slug]
           </nav>
         )}
       </article>
+      {/* Escape = B = Back: up one level, to this entry's section — the same
+          destination the crumb link points at. */}
+      <KeyHints backHref={sectionHref(section)} />
     </main>
   );
 }

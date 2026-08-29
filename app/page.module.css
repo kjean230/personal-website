@@ -28,33 +28,22 @@
   line-height: var(--leading-tight);
 }
 
-/* The route table's top level: one plain link per brief §4.3 section. */
+/* The route table's top level: one link per brief §4.3 section, rendered as
+ * the console tile row. The row and the Resume link beside it are styled by
+ * app/(explorer)/explorer.module.css, which owns the shell's presentation;
+ * this rule only gives the nav the full width of the centred column to lay
+ * the tiles out in.
+ */
 .sections {
+  /* .main is a grid with justify-items: center, which would size the nav to
+   * fit-content and collapse the percentage-based tile grid inside it.
+   * justify-self is the inline axis — align-self would be the wrong one.
+   * 20 × 4rem = 80rem caps the row so six tiles stay well over their 12rem
+   * minimum instead of stretching across an ultrawide display.
+   */
+  justify-self: stretch;
+  width: 100%;
+  max-width: calc(var(--space-16) * 20);
   margin-top: var(--space-4);
-}
-
-.sectionList {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.sectionLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--size-touch-min);
-  padding: 0 var(--space-4);
-  border: var(--border-hairline);
-  border-radius: var(--radius-pill);
-  color: var(--color-text);
-  font-weight: var(--weight-semibold);
-  text-decoration: none;
-}
-
-.sectionLink:hover {
-  border-color: var(--color-border-strong);
+  margin-inline: auto;
 }
