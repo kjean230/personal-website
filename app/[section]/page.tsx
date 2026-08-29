@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadSection } from "@/lib/routes/load";
-import { entryHref, parseFacetParam, sectionFromSegment } from "@/lib/routes/table";
+import { HOME_HREF, entryHref, parseFacetParam, sectionFromSegment } from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
+import { KeyHints } from "../(explorer)/key-hints";
 import { EntryDates } from "../entry-dates";
 import styles from "../site.module.css";
 
@@ -81,6 +82,9 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
           ))}
         </ul>
       )}
+      {/* Escape = B = Back: up one level, to the tile row. KeyHints mounts the
+          binding with its own visible cue. */}
+      <KeyHints backHref={HOME_HREF} />
     </main>
   );
 }

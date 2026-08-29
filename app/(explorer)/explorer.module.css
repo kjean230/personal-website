@@ -1,0 +1,163 @@
+/* explorer.module.css — the console tile row and its key hints (S7).
+ *
+ * Every value is a token var() or an expression over tokens; nothing here is a
+ * design value of its own (see app.css header — design/tokens/tokens.css is the
+ * source of truth for colour, size, radius, easing and shadow).
+ *
+ * The visual is Phase 0's, already drawn: the `.strip` tile row that
+ * design/tokens/build.mjs renders into design/tokens/specimen.html. Faces sit
+ * on the raised surface inside a strong border at --radius-sm, and the focused
+ * face flips to saffron inside the accent outline — DESIGN.md's rule that a
+ * fill appears only for the active item, in saffron, inside the outline. The
+ * specimen may write 72px/56px/32px because design/** is exempt from the token
+ * rule; this file is not, so the same shapes are composed from --size-* and
+ * --space-*.
+ *
+ * prefers-reduced-motion needs no media query here: tokens.css already zeroes
+ * every --duration-* globally, so the transition below collapses to 0ms.
+ */
+
+/* auto-fit + minmax is the whole responsive story: the row is horizontal while
+ * the tiles fit and collapses to the vertical stack of brief §5.2 when they do
+ * not — six columns, then four, three, two, one. No breakpoint, which matters
+ * beyond taste: a custom property is illegal inside an @media condition, so a
+ * breakpoint could never have been a token.
+ *
+ * The tile's comfortable minimum is 3 × --space-16 = 12rem, enough for the
+ * longest label ("Hobbies & Interests"). min(100%, …) keeps it from overflowing
+ * a viewport narrower than that.
+ *
+ * Never give this an overflow: the global :focus-visible ring is drawn with
+ * outline-offset, and a clipping ancestor would cut it. The row wraps rather
+ * than scrolling, so there is no scroll container to strand focus in either.
+ */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-16) * 3)), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+}
+
+/* The tile is the link: the whole face is the target, comfortably past the
+ * 44px minimum in both axes (brief §2.2).
+ */
+.tileLink {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: calc(var(--size-touch-min) * 2);
+  padding: var(--space-4) var(--space-2);
+  /* 2px resting and 2px active, so the accent outline lands with no shift. */
+  border: var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  box-shadow: var(--elevation-1);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  text-align: center;
+  text-decoration: none;
+  /* Colour and shadow only — no positional lift. DESIGN.md calls elevation "a
+   * stamp, not a glow", and movement is the thing prefers-reduced-motion is
+   * about. Durations are already 0ms under it, globally, from tokens.css.
+   */
+  transition-property: background-color, border-color, box-shadow, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-glide);
+}
+
+.tileLabel {
+  display: block;
+}
+
+.tileIcon {
+  display: block;
+  width: var(--size-icon-lg);
+  height: var(--size-icon-lg);
+}
+
+.tileIcon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The active item's fill. :focus-visible keeps the global focus ring from
+ * app.css on top of it — the fill marks which tile the row is on, the ring
+ * marks that the row has focus, and neither replaces the other.
+ */
+.tileLink:hover,
+.tileLink:focus-visible {
+  border: var(--border-accent);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--elevation-2);
+}
+
+/* Resume sits beside the row rather than in it: it is a real destination in
+ * the route table, but not one of the brief §4.3 sections the arrows walk.
+ */
+.aside {
+  margin: var(--space-4) 0 0;
+}
+
+.asideLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-4);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.asideLink:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* Corner button hints (brief §2.1's borrowed grammar, this project's glyphs). */
+.hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: var(--space-6) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.hintIcon {
+  display: block;
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+}
+
+.hintIcon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.key {
+  padding: 0 var(--space-1);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+}
