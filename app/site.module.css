@@ -1,0 +1,383 @@
+/* site.module.css — the route skeleton and the S6 recruiter render: site
+ * header, section index, entry page, resume. Every value is a token var()
+ * (see app.css header); nothing here is presentation beyond legible,
+ * keyboard-operable semantic HTML with ≥44px targets. S7 (console shell)
+ * wraps it.
+ */
+
+/* Skip link — off the top of the page until it is focused, so the first Tab
+ * on any page reaches <main id="main"> (brief §2.2: no traps). It uses a
+ * transform rather than an offset so no size lives outside the token file.
+ */
+.skipLink {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: var(--space-0);
+  inset-inline-start: var(--space-4);
+  transform: translateY(-100%);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-4);
+  border: var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+}
+
+.header {
+  border-bottom: var(--border-hairline);
+}
+
+.siteNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-6);
+}
+
+.siteLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-2);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.siteLink:hover {
+  text-decoration: underline;
+}
+
+.main {
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-16);
+}
+
+.heading {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.subheading {
+  margin: var(--space-8) 0 var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Facet chips (brief §4.2): pill-shaped, one active at a time. */
+.chips {
+  margin: 0 0 var(--space-6);
+}
+
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-4);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.chip[aria-current="page"] {
+  border-color: var(--color-border-strong);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* Entry lists: one link per row, meta beside it. */
+.entryList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  min-height: var(--size-touch-min);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-hairline);
+}
+
+.entryLink {
+  display: inline-block;
+  padding: var(--space-1) 0;
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* Entry page. */
+.article {
+  display: block;
+}
+
+.crumb {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.crumb a {
+  display: inline-block;
+  padding: var(--space-1) 0;
+  color: var(--color-text-muted);
+}
+
+.summary {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-lg);
+}
+
+.related {
+  margin-top: var(--space-4);
+}
+
+/* Section index row (S6). `.entry` above stays the compact baseline row the
+ * Related nav uses; an index row is a column carrying dates and a summary. */
+.indexEntry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) 0;
+  border-bottom: var(--border-hairline);
+}
+
+.indexTitle,
+.resumeTitle {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* A standalone link, not one in running text, so it earns a full target. */
+.indexTitle .entryLink,
+.resumeTitle .entryLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-min);
+}
+
+.indexSummary {
+  margin: var(--space-1) 0 0;
+}
+
+/* The <time> range, plus the location on an entry page. */
+.dates {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Entry body — HTML from lib/render/markdown.ts, so every selector here is a
+ * descendant one: the markup is injected, never authored in a component. */
+.body {
+  margin: var(--space-6) 0 0;
+}
+
+.body p,
+.body ul,
+.body ol,
+.body pre,
+.body blockquote {
+  margin: 0 0 var(--space-4);
+}
+
+.body ul,
+.body ol {
+  padding-inline-start: var(--space-6);
+}
+
+.body li {
+  margin-bottom: var(--space-2);
+}
+
+.body h2,
+.body h3,
+.body h4,
+.body h5,
+.body h6 {
+  margin: var(--space-6) 0 var(--space-2);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.body h2 {
+  font-size: var(--text-lg);
+}
+
+.body h3 {
+  font-size: var(--text-md);
+}
+
+.body h4,
+.body h5,
+.body h6 {
+  font-size: var(--text-sm);
+}
+
+/* Body links keep the UA underline: axe's link-in-text-block wants a cue that
+ * is not colour alone, and these sit inside running text. */
+.body a {
+  color: var(--color-primary-text);
+}
+
+.body code {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  font-size: var(--text-sm);
+}
+
+.body pre {
+  overflow-x: auto;
+  padding: var(--space-3);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.body pre code {
+  padding: 0;
+  background: none;
+}
+
+.body blockquote {
+  padding-inline-start: var(--space-4);
+  border-inline-start: var(--border-strong);
+  color: var(--color-text-muted);
+}
+
+.body img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Typed metadata (brief §4). The <dl> holds dt/dd and nothing else — axe's
+ * definition-list rule — so the layout is plain block flow. */
+.detailList {
+  margin: var(--space-6) 0 0;
+}
+
+.detailTerm {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.detailValue {
+  margin: var(--space-1) 0 0;
+}
+
+/* External links: the .chip pattern, so each is a ≥44px standalone target. */
+.linkList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linkItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Tags, grouped by category. Not links — there is no tag route — so these are
+ * plain pills. */
+.tagGroup {
+  margin: var(--space-4) 0 0;
+}
+
+.tagHeading {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-3);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+}
+
+/* Resume (brief §2.2): the same rows, four sections, nothing else. */
+.resumeSection {
+  margin: 0;
+}
+
+.resumeRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) 0;
+  border-bottom: var(--border-hairline);
+}

@@ -1,4 +1,3 @@
-
 # Cowork Session Prompts
 
 `BUILD_BRIEF.md` and `BUILD_PLAN.md` are committed to the repo, and the repo copy is authoritative. Never paste them into a chat — agents read them from the repo. Each Cowork session gets one prompt from this file.
@@ -115,6 +114,512 @@ Blockers: ask. Do not invent content, names, dates, or assets.
 ## Session 2 — after you pick
 
 Fill the template with Phase 0b from BUILD_PLAN §3, parent branch `lane/identity`, and add the chosen identity's name to the scope line. 0b merges `lane/identity` into `main` and unblocks everything visual.
+
+---
+
+## Sessions S1–S5
+
+Ran from the template between 2026-08-24 and 2026-08-27; their prompts were pasted, not recorded. Their handoffs are the record: `handoff/feat-spine-ci.md` → `feat-spine-schema.md` → `feat-spine-linkedin-import.md` → `feat-spine-api.md` → `feat-spine-routes.md`, each with a close-out chore beside it. From S6 on, each session's block is committed here before it runs.
+
+---
+
+## Session — S6 `feat/spine-recruiter`
+
+State on 2026-08-27, so the agent can verify rather than assume: `main` = `a8eca69` (Phase 0). `origin/lane/spine` = `9edb3ca` or later — S1–S5 merged, PRs #6–#18 all green. `feat/spine-recruiter` exists **locally**, created from `origin/lane/spine` at `9edb3ca`, zero commits of its own, not on the remote. Hosted Supabase holds the real content: 19 entries (10 experience · 2 project · 2 education · 5 certification), 3 relations, 1 link, 0 media, 0 tags. `npm run db:reset` loads the fixture and the same content locally.
+
+Amended 2026-08-27 (`chore/prompts-spine-s6-reconcile`, after PR #19 merged as `eaf5899`): a superseded local S6 brief from an earlier planning pass surfaced and the owner chose to reconcile, so this block now carries those earlier decisions — `marked@18.0.11`; `/resume` order Experience · Projects · Education · Certifications & awards with links rows; the one `listLinks` query addition; the media rule — plus that pass's plan-time verifications. See `handoff/chore-prompts-spine-s6-reconcile.md`.
+
+```
+Context: read CLAUDE.md, BUILD_BRIEF.md, and BUILD_PLAN.md in the repo before
+doing anything. The repo copy of each is authoritative.
+
+Precedence: the brief governs scope and constraints. The plan governs order,
+branching, and gates. CLAUDE.md governs repo conventions only — commands, code
+style, file layout. Where brief §8 and the plan disagree, the plan wins. Where
+CLAUDE.md contradicts either on scope or sequencing, the brief and plan win, and
+you flag the contradiction instead of silently picking one.
+
+Read next, in this order, before touching a file. Do not paste them back; read
+them from the repo:
+  1. handoff/feat-spine-routes.md — Shipped (what the skeleton already does),
+     Deferred (the list that is now your scope), Next.
+  2. handoff/chore-spine-s5-closeout.md — the merged-head verification and the
+     four open questions; three are answered below. Then
+     handoff/chore-prompts-spine-s6.md and
+     handoff/chore-prompts-spine-s6-reconcile.md — how this block came to be
+     and which decisions it carries.
+  3. handoff/feat-spine-api.md — "The contract S5, S6, S7 and S8 can rely on"
+     and "Caching and revalidation". The query layer is closed to you; you read
+     through lib/routes/load.ts.
+  4. lib/routes/table.ts (header comment = the URL contract), lib/routes/load.ts,
+     lib/content/queries.ts (header), lib/content/schema.ts (the enums and the
+     metadata keys: date_precision, location, cause, activities, category,
+     credential_id, credential_url).
+  5. DESIGN.md and design/tokens/tokens.css — the only source of colour, size,
+     radius, easing, shadow. app/app.css's header states the rule: var() only.
+  6. app/layout.tsx, app/page.tsx, app/[section]/page.tsx,
+     app/[section]/[slug]/page.tsx, app/resume/page.tsx, app/site.module.css —
+     the S5 skeleton you render on. Every file's header comment says what S6
+     is expected to add.
+
+Task: S6 — feat/spine-recruiter
+
+Branch: feat/spine-recruiter already exists locally. Do not recreate it. Start
+with `git fetch origin`, then confirm
+`git rev-list --left-right --count origin/lane/spine...feat/spine-recruiter`
+reports `N 0` (zero commits of its own). If N > 0, fast-forward it:
+`git switch feat/spine-recruiter && git merge --ff-only origin/lane/spine`.
+If the right-hand number is not 0, stop and report — someone committed to it.
+
+Scope: SSR section index + detail page · functional with JS disabled · plain
+`/resume`
+
+What that means on this codebase, derived from S5's Deferred list:
+
+  Section index — app/[section]/page.tsx. Keep the file, the resolution order
+  (segment → notFound, ?facet= → notFound, loadSection) and the chip <nav>.
+  Render each row as a real index entry: title link (canonical href via
+  entryHref), subtitle, date range, summary, and status text where it carries
+  meaning (in_progress, archived). Keep data-status on the row — S8 reads it.
+  The trophy-case section (/certifications, section.trophyCase) lists
+  certifications with category · status text as today; the locked /
+  in_progress / unlocked *states* are S8's, not yours. The empty state stays
+  for /hobbies and /now.
+
+  Entry page — app/[section]/[slug]/page.tsx. Keep the react-cache'd resolve,
+  generateStaticParams → [], and notFound() / permanentRedirect() at the top
+  level of the page outside any try. Add, each section only when it has rows:
+  the dates line (<time> range plus metadata.location when present); the body
+  as <div dangerouslySetInnerHTML={{ __html: renderMarkdown(entry.body) }}>
+  only when body is non-null (Decision 2; precedent app/page.tsx); a <dl> of
+  the typed metadata keys present — location, cause (experience), activities
+  (education), credential_id (certification) — with only dt/dd children; an
+  <h2>Links</h2> list of detail.links as <a href rel="noopener">{label}</a>
+  plus the kind as muted text, no target="_blank" (URLs are http(s) by CHECK);
+  an <h2>Tags</h2> list of detail.tags grouped by category (zero content rows
+  today; the fixture exercises it locally); the Related nav as it stands.
+  The credential link is the certification's `links` row of kind `profile`;
+  metadata.credential_url duplicates it and is not rendered separately. Media:
+  nothing (Decision 3).
+
+  Dates — every date renders through one helper (lib/render/dates.ts, no Date
+  objects) honouring metadata.date_precision: day → "May 1, 2026", month →
+  "May 2026", year → "2026"; absent precision (fixture rows only) is treated
+  as a full date; is_current → "Present" as the end; no end and not current →
+  start only. Never invent a day: the seed's placeholder "01" must not appear
+  at month precision. Emit <time datetime="…"> with the precision-appropriate
+  value ("2026-05-01", "2026-05", "2026"). Unit-test each precision,
+  is_current, null start, null end.
+
+  /resume — app/resume/page.tsx. Replace the placeholder. Plain semantic HTML:
+  <h1> the name (the existing "Kerwyn Jean" from app/layout.tsx metadata —
+  lift it into one shared constant, e.g. lib/site.ts SITE_NAME, and use it in
+  the layout and the page titles too), then four sections in this order:
+  Experience, Projects, Education, Certifications & awards — each
+  <section aria-labelledby> with an <h2> and a list of <article> rows: title
+  (a Link to entryHref), subtitle (org / issuer), date range at precision,
+  summary, and the entry's `links` rows as a small list. Nothing else: no
+  headline, location, contact, profile link, summary paragraph, or body text.
+  Rows are in tile order (compareRecency — featured, weight, recency), the
+  same order the section pages use; an empty section still shows its <h2> and
+  "Nothing here yet.". Read through a new lib/routes/load.ts loader,
+  loadResume(queries) → { sections: { label, entries: { entry, links }[] }[] }
+  (injectable queries; no discriminated result — it cannot 404), composed from
+  listSection("experience" | "project" | "education"), listTrophies(), and
+  the one new query listLinks() (Decision 8), links grouped by entry_id.
+  Unit-test it with fake queries beside loadSection's tests — tile() gives
+  every fake row the same id, so pass distinct id overrides — and in
+  supabase/tests/routes.test.ts against the sidecar. No contact block — see
+  Decision 1.
+
+  Rendering modes — /[section] stays ƒ (it reads searchParams). /[section]/
+  [slug] stays ● SSG-on-demand. /resume now reads content and has no dynamic
+  input, so it prerenders at build and revalidates under the inherited
+  3600 s window and the `content` tags. Consequence: `next build` now needs
+  NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. CI's build
+  and lighthouse jobs, Vercel, and the local .env already carry them; the
+  Database job does not run `next build`. Update the CLAUDE.md sentence that
+  says `next build` needs no Supabase variables. No cacheComponents, no
+  'use cache', no route-level revalidate, no next.config.ts change.
+
+Decisions already made — do not reopen, do not stop on them:
+  1. /resume is entries only. Name comes from the layout; no email, phone,
+     address, or profile URL anywhere in the tree (the close-out greps treat
+     `gmail`, `@fordham.edu`, `linkedin.com/in/` as leaks). A contact line is
+     feat/recruiter-resume-print's, with owner-supplied values. Print styling,
+     OG images, sitemap, structured data, alternates.canonical are
+     lane/recruiter's; metadataBase waits on the domain (plan §8).
+  2. Markdown: the ONE dependency is marked@18.0.11, exact-pinned
+     (`npm install --save-exact marked@18.0.11`) — the owner's choice: zero
+     transitive dependencies, MIT, engines node >= 20, and the GitHub advisory
+     DB reports nothing affecting 18.0.11 (the only 18.x advisory,
+     GHSA-6v9c-7cg6-27q7, covers 18.0.0–18.0.1). Record `npm audit --json`
+     metadata.vulnerabilities before and after (baseline 10 = 2 low / 1
+     moderate / 7 high, all in the @lhci/cli chain; expect identical, 0 new);
+     if 18.0.11 has an open advisory at install time with no clean alternative,
+     fall back to paragraphs-and-bullets only and say so. Server-only: one
+     module, lib/render/markdown.ts, renderMarkdown(body) → string, never
+     imported from a client file; lighthouserc.json's script budget (136 KB
+     measured at S5, 250 KB cap) must not grow. marked has no sanitize option
+     and no exported escape helper, so the boundary is renderer overrides on a
+     module-local `new Marked({ gfm: true, async: false })` — each override
+     MUST return a string (returning false falls through to marked's default):
+     html({ text, block }) → escaped text, wrapped in <p> when block (the
+     parser appends block html bare); link({ href, title, tokens }) → <a href
+     rel="noopener"> only when href matches ^https?:// or starts with "/",
+     escaping href and title, otherwise just the inline content; image({ href,
+     text }) → <img src alt> only for ^https?://, else the escaped alt text;
+     a hooks.processAllTokens pass that shifts heading depths so the body's
+     shallowest heading becomes h2 (clamp 6) — axe's heading-order rule fails
+     a jump of more than one level after the page <h1>. Output is therefore p,
+     ul/ol/li, strong/em, code, a, h2–h6. Tests (lib/render/markdown.test.ts):
+     a block <script> is escaped inside <p>; inline <b onclick> escaped;
+     javascript: and data: hrefs dropped (text kept); https and site-relative
+     hrefs kept with rel="noopener"; "## only" → <h2>; "#" + "##" → h2 + h3;
+     never past h6; bullets / paragraphs / emphasis / code render; sync and
+     deterministic; plus one real body from supabase/seed.content.sql.
+  3. Media: the owner's rule is "<img alt> only when a Supabase Storage public
+     URL can actually be built". None can today: no bucket exists
+     (supabase/config.toml pins only vector/analytics off; feat/admin-media
+     creates the bucket) and no content row has media. So S6 renders no media
+     markup, adds no bucket constant and no URL helper, and does not guess a
+     bucket name. Record under Deferred → feat/admin-media: "media: <figure>
+     <img alt={alt_text}><figcaption> from the public bucket once it exists;
+     URL shape …/storage/v1/object/public/<bucket>/<path>". (The fixture's
+     media rows show locally as nothing; that is correct.)
+  4. Empty sections (/hobbies, /now) stay linked from / and render their empty
+     state. Whether the S7 tile row hides them is S7's call.
+  5. The Vercel preview is SSO-gated (302 to vercel.com/sso-api for every
+     URL). "Preview deploy live" means the deployment reports success; you
+     cannot curl it and must not try to bypass it. CI's own Lighthouse run
+     gates the routes; smoke locally against `npm run build && npm run start`.
+  6. The merged local branches (six chore/* and feat/spine-routes) stay.
+  7. Education rows keep facet = null (the sixth-facet question is an owner
+     note, carried forward); /education correctly shows only the All chip.
+  8. No query-layer change, with exactly ONE sanctioned addition, needed by
+     /resume: `listLinks(client = getAnonClient()): Promise<Link[]>` in
+     lib/content/queries.ts — `client.from("links").select("*", { count:
+     "exact" }).order("entry_id").order("label")` through complete(), each row
+     parseRow(linkSchema, "link", row); add it to the file's header list, to
+     the RouteQueries Pick and defaultQueries in lib/routes/load.ts, and to
+     every typed `queries` literal that the Pick change breaks (seven fakes in
+     lib/routes/load.test.ts → `listLinks: unused`; supabase/tests/
+     routes.test.ts → `listLinks: () => listLinks(client)`). Test it in
+     supabase/tests/api.test.ts (ids equal `select id from public.links order
+     by entry_id, label, id`; every row parses; the brief §4.1 certification's
+     single `profile` link belongs to it) — db:test baseline 62 → 64 with the
+     loadResume test. Anything else missing from lib/content/queries.ts or
+     schema.ts is a contract change — stop and report it; do not patch it in.
+
+Constraints that apply to every line you write:
+  - No "use client" anywhere in this sub-branch. Every interactive element is
+    a link or a form; facet chips remain plain <a>. This is the "functional
+    with JS disabled" acceptance item and it is proved, not asserted (below).
+  - Tokens only: every CSS value is a var() from design/tokens/tokens.css;
+    `npm run tokens:check` must pass; both themes come free if you use token
+    pairs from design/tokens/CONTRAST.md and nothing else.
+  - Semantic HTML: one <h1> per page, <main id="main">, <article> for the
+    entry, <nav aria-label> for chip / related / section groups, <time> for
+    dates, <dl> or <ul> for metadata, link text that reads alone. Touch
+    targets ≥ 44 px (--size-touch-min). Optional: a skip link to #main in the
+    layout.
+  - Brief §2.1: no prohibited term in copy, metadata, filenames, alt text.
+    Grep the diff before the PR.
+  - One page file per URL. No new route files; no route groups.
+
+Verified at plan time (2026-08-27, read-only against node_modules and the
+published marked package) — reuse, do not re-derive:
+  - Next 16.3.2: a route with no dynamic segment prerenders regardless of
+    fetch revalidate; the 3600 s window comes from withContentCache's
+    next.revalidate and lands in .next/prerender-manifest.json as
+    initialRevalidateSeconds: 3600. The build glyph stays ○ — ISR is visible
+    only in the revalidate column / the manifest. A thrown prerender error
+    fails `next build` (non-zero exit), which is why the two public variables
+    are now build-time inputs. Only headers() / cookies() / searchParams /
+    revalidate: 0 / no-store would make /resume dynamic; loadResume uses none.
+  - Lighthouse 12.6 / axe 4.13 weighted rules the new markup touches:
+    heading-order (see Decision 2), definition-list / dlitem (<dl> holds only
+    dt/dd, or div wrappers), list / listitem (<ul> holds only <li>),
+    link-name, link-in-text-block (body links keep the UA underline — do not
+    copy .siteLink's text-decoration: none), target-size (standalone link and
+    tag chips need min-height: var(--size-touch-min), the .chip pattern;
+    links inside running text are exempt), color-contrast (token pairs only).
+    <time datetime="2026-05"> and "2026" are valid HTML; no axe rule.
+  - Tests: `npm test` does not typecheck; `npm run typecheck` does and is a CI
+    job — the RouteQueries Pick change is what breaks the eight typed
+    literals named in Decision 8. vitest.config.ts collects lib/**/*.test.ts,
+    so new helper tests under lib/render/ run with `npm test`.
+  - Docs that become false and must change in this PR: the CLAUDE.md Route
+    table sentence "/ and /resume are static; next build needs no Supabase
+    variables"; lib/routes/table.ts's header row for /resume (Reads "—") —
+    comment only, the URL set and exports untouched; app/resume/page.tsx's
+    header comment. A fresh clone without .env now fails `next build`.
+  - @next/next/no-img-element is warn-level and moot (no media). Every token
+    the new CSS needs exists in design/tokens/tokens.css. No profile row
+    exists (Profile.csv → lane/content), so /resume carries only the name and
+    the entries; all 19 real rows carry date_precision (18 month, 1 day).
+
+Out of scope: adjacent sub-branches, refactors outside the touched files,
+reopening settled decisions, inventing content of any kind.
+
+Verification before the PR, all recorded in the handoff with numbers:
+  - `npm run lint` (0 problems) · `npm run typecheck` · `npm test` (S5
+    baseline 90 + the new markdown, dates and loadResume tests — report the
+    exact total) · `npm run tokens:check` · `npm run build` (record each
+    route's mode; expect / ○, /resume ○ — the glyph stays ○ and ISR shows only
+    as the `1h` revalidate column; confirm .next/prerender-manifest.json
+    routes["/resume"].initialRevalidateSeconds === 3600 — /[section] ƒ,
+    /[section]/[slug] ●) · `npm run db:reset && npm run db:test` (baseline 62
+    → expect 64: listLinks in api, loadResume in routes; Docker Desktop must
+    be running — every db:* script is a docker compose wrapper).
+  - HTTP smoke against `npm run start` on the hosted data — status codes,
+    link and element counts only, never a row: / 200 · /experience 200 ·
+    /experience?facet=research 200 · /experience?facet=bogus 404 ·
+    /experience/guardian 200 · /experience/break-through-tech 200 with body,
+    dates, 2 related · /projects/break-through-tech 308 →
+    /experience/break-through-tech · /projects/airbnb-superhost-classifier
+    200 · /certifications/machine-learning-foundations 200 with a credential
+    link (rel="noopener" count 1) · /education 200 · /hobbies 200 empty state
+    · /now 200 empty state · /resume 200 with four <h2> and 19 <h3> rows and
+    the name in the <h1> · /experience/no-such-slug 404 · /nope 404. Confirm
+    port 3000 is free first (a stale next-server bit S5) and stop the server
+    after.
+  - JS-disabled proof: fetch each 200 page with curl and assert the content
+    is in the HTML (titles, dates, body text, resume sections); then load
+    /experience/break-through-tech and /resume in headless Chrome with
+    scripts disabled (`--blink-settings=scriptEnabled=false`) and confirm the
+    same. Note that `grep -rn "use client" app lib` is empty.
+    [Corrected 2026-08-28 by `chore/spine-s6-closeout`: that flag emits ZERO
+    BYTES in the installed Chrome — both `--dump-dom` and `--screenshot`, old
+    and new headless. Use S6's replacement, which is stricter because the
+    scripts are absent rather than merely inert: fetch the served HTML, strip
+    every `<script>` tag, insert `<base href="http://localhost:PORT/">`, write
+    to the scratchpad, and render the `file://` copy headless.]
+  - Lighthouse locally: `npx lhci autorun` — a11y 1.0 on every audited URL is
+    the CI gate. You may add http://localhost:3000/experience/break-through-tech
+    to lighthouserc.json so the new detail markup is gated; change no budget.
+  - `npm audit` delta = 0 new. Script size unchanged or explained.
+  - Prohibited-term and secret-shape grep over the diff: clean.
+
+Done when: the scope above is implemented, green CI passes, and the preview
+deploy is live.
+
+Then: commit in three imperative one-line commits, owner-only attribution (no
+trailers; `git log -1 --format=%B` after each): (1) the render helpers and
+tests + package.json / package-lock.json; (2) listLinks, loadResume, the three
+pages, layout, CSS, the comment-only edits to lib/routes/table.ts's header
+(/resume "Reads" cell) and app/resume/page.tsx; (3) CLAUDE.md + the handoff.
+Push with `git push -u origin feat/spine-recruiter` — the branch was cut
+tracking origin/lane/spine, so never a bare `git push` and never
+`HEAD:lane/spine`. Open a PR into lane/spine with auto-merge (squash) enabled:
+`gh pr create --base lane/spine --body-file …`, then `gh pr merge --auto
+--squash`. PR body in the PR #17 / #19 skeleton (`gh pr view 17 --json body
+-q .body`): header, Plan row / Handoff / Lane checklist link to BUILD_PLAN §7,
+What this PR does with the counts, Files, the §2.1 definition of done (five
+ticks), Security (§7 — the dependency tick names marked@18.0.11 exact-pinned,
+zero dependencies, server-only, and the audit counts before / after; the Zod
+tick says body HTML is escaped at the markdown boundary and hrefs are
+allowlisted), IP (§7). Tick only what you verified. Write
+handoff/feat-spine-recruiter.md and commit it in the same PR, using the
+handoff format in the Stop rule section below. Carry forward verbatim the
+"Unchanged from earlier handoffs" bullet and the "Owner notes carried forward"
+block from handoff/chore-spine-s5-closeout.md, struck through only where this
+PR resolved one; add under Open questions: resume order = tile order rather
+than a strict date sort — confirm; the <dl> keys on the detail page — strike
+if unwanted. Update CLAUDE.md's Repo state paragraph and the Route table (S5)
+bullet for what S6 added (files, lib/render/, listLinks / loadResume, marked,
+the /resume rendering mode — the sentence "`next build` needs no Supabase
+variables" is now false), lean, pointing at the handoff. Then stop and
+report. Do not begin the next sub-branch. Do not continue after the PR is
+open even if there is obvious remaining work — name it in the handoff
+instead.
+
+Tripwire: if this sub-branch turns out materially larger than its BUILD_PLAN
+row describes, stop immediately, do not push through. Report what the row missed
+and propose a split into two sub-branches. Scope discovered mid-flight is
+reported, never absorbed.
+
+Blockers: ask. Do not invent content, names, dates, or assets.
+```
+
+---
+
+## Session — S7 `feat/spine-console-tile` (pre-filled; run after S6's handoff lands)
+
+Two plan-silent gaps to settle **before** this block is pasted, each with the recommended answer; write the owner's choice into the Scope paragraph:
+
+- **Where shell code lives.** Plan §5 says the shell owns `app/(explorer)`, but S5 verified that two route groups resolving to one path is a Next build error and fixed one page file per URL. Recommended: `app/(explorer)/` holds the shell's **components only** — no `page.tsx`, no `layout.tsx` inside the group — and the shared page files import them. That keeps ownership as the plan says without a second route tree.
+- **How S7 chooses a renderer at the same URL** with no profile select yet (that is `feat/shell-boot-profile`). Recommended: S7 has no mode switch. The tile row is the **enhanced rendering of the home page's existing section nav** — the same `<ul>` of links, wrapped by one client island that adds roving `tabindex`, arrow keys, Enter (follow the focused link), Escape (return focus to the row / go back on the detail page). With JS off, the links are the tile row. Recruiter and Explorer are the same markup until the profile select exists.
+
+```
+Context: read CLAUDE.md, BUILD_BRIEF.md, and BUILD_PLAN.md in the repo before
+doing anything. The repo copy of each is authoritative.
+
+Precedence: the brief governs scope and constraints. The plan governs order,
+branching, and gates. CLAUDE.md governs repo conventions only — commands, code
+style, file layout. Where brief §8 and the plan disagree, the plan wins. Where
+CLAUDE.md contradicts either on scope or sequencing, the brief and plan win, and
+you flag the contradiction instead of silently picking one.
+
+Read next: handoff/feat-spine-recruiter.md (Shipped, Deferred, Next), then
+handoff/feat-spine-routes.md, lib/routes/table.ts, app/page.tsx,
+app/[section]/[slug]/page.tsx, DESIGN.md (icons, motion, the outline rule),
+design/tokens/tokens.css (--duration-*, --ease-glide, --focus-ring,
+--size-touch-min), design/assets/icons/tile-*.svg and hint-a.svg / hint-b.svg.
+REFERENCES.md, if present locally, is authoritative for the tile-row grammar;
+its absence is normal.
+
+Task: S7 — feat/spine-console-tile
+
+Branch: create feat/spine-console-tile from origin/lane/spine after
+`git fetch origin`. Never from feat/spine-recruiter.
+
+Scope: Minimal shell: one tile row, tile → detail at the same URL ·
+arrows/Enter/Escape · roving `tabindex` · visible focus ring
+
+  [OWNER: paste the two settled answers here — shell code location; renderer
+  selection at the same URL.]
+
+  The tile row is the six brief §4.3 sections in SECTIONS order, each tile an
+  <a> to sectionHref(section) carrying its tile-*.svg inline (currentColor,
+  no copy of the file — read at build time as app/page.tsx reads the badge).
+  Selecting a tile lands on /<section> — the S6 index — and from there an
+  entry link lands on /<section>/<slug>. Same URLs, one page file each; the
+  shell adds no route. Keyboard: Left/Right (and Up/Down on the vertical
+  fallback) move the roving tabindex; Home/End jump; Enter activates the
+  focused link; Escape on the detail page returns to its section (history
+  back if it came from there, else the section href). Focus ring is
+  --focus-ring, always visible, never removed. Hint row: "A Select · B Back"
+  using hint-a.svg / hint-b.svg with the key names in <kbd> for keyboard
+  users. prefers-reduced-motion: tokens already zero every duration; do not
+  animate anything the tokens do not.
+
+  Not in S7: boot sequence, profile select, sound, gamepad, All Software
+  grid, search, settings, notifications, mobile shell, trophy states. Each is
+  a named lane/console-shell sub-branch.
+
+  This is the repo's first "use client" island. Keep it one component, keep
+  it small, and prove the script budget: lighthouserc.json caps script at
+  250 KB (S6 measured value in its handoff); record the delta.
+
+  Empty sections (/hobbies, /now): [OWNER: show the tile with an empty
+  state, or hide tiles for sections whose count is 0 — the count is a query,
+  never a constant].
+
+Out of scope: adjacent sub-branches, refactors outside the touched files,
+reopening settled decisions, inventing content of any kind.
+
+Verification: lint · typecheck · test · tokens:check · build · db:test · the
+S6 HTTP smoke unchanged (status codes only) · JS-disabled: the row is still six
+links · keyboard: Tab into the row once, arrows move focus, Enter opens
+/experience, Enter on an entry opens its page, Escape returns, Tab leaves the
+row — no trap, focus visible at every step; record the sequence · Lighthouse
+a11y 1.0 on every audited URL · prohibited-term grep clean.
+
+Done when: the scope above is implemented, green CI passes, and the preview
+deploy is live.
+
+Then: open a PR into lane/spine with auto-merge (squash) enabled and the
+BUILD_PLAN §7 security block ticked. Write handoff/feat-spine-console-tile.md
+and commit it in the same PR, using the handoff format in the Stop rule section
+below. Carry the S6 handoff's carried-forward blocks. Then stop and report. Do
+not begin the next sub-branch. Do not continue after the PR is open even if
+there is obvious remaining work — name it in the handoff instead.
+
+Tripwire: if this sub-branch turns out materially larger than its BUILD_PLAN
+row describes, stop immediately, do not push through. Report what the row missed
+and propose a split into two sub-branches. Scope discovered mid-flight is
+reported, never absorbed.
+
+Blockers: ask. Do not invent content, names, dates, or assets.
+```
+
+---
+
+## Session — S8 `feat/spine-trophy` (pre-filled; run after S7's handoff lands)
+
+One reading to confirm before pasting: brief §4 gives `status` three values (`unlocked | in_progress | archived`) and brief §5 gives the trophy case three states (locked / in-progress / unlocked). S2's fixture was written on the mapping **`archived` → locked**, and its comment says so ("in_progress and archived certifications so all three trophy states exist"). Confirm that mapping or name another; the hosted data today has five `unlocked` certifications and no other state, so the other two states are visible only with the fixture locally.
+
+```
+Context: read CLAUDE.md, BUILD_BRIEF.md, and BUILD_PLAN.md in the repo before
+doing anything. The repo copy of each is authoritative.
+
+Precedence: the brief governs scope and constraints. The plan governs order,
+branching, and gates. CLAUDE.md governs repo conventions only — commands, code
+style, file layout. Where brief §8 and the plan disagree, the plan wins. Where
+CLAUDE.md contradicts either on scope or sequencing, the brief and plan win, and
+you flag the contradiction instead of silently picking one.
+
+Read next: handoff/feat-spine-console-tile.md, handoff/feat-spine-recruiter.md,
+lib/routes/load.ts (loadTrophies, the Trophy type), lib/content/queries.ts
+(listTrophies), lib/content/schema.ts (STATUSES, CERTIFICATION_CATEGORIES),
+app/[section]/page.tsx (the trophyCase branch and data-status), DESIGN.md
+(fills only for the unlocked item; in-progress is distinguished by the level
+mark, not by colour alone), design/assets/icons/trophy-locked.svg,
+trophy-in-progress.svg, trophy-unlocked.svg.
+
+Task: S8 — feat/spine-trophy
+
+Branch: create feat/spine-trophy from origin/lane/spine after `git fetch
+origin`.
+
+Scope: Trophy case rendering `status` as locked / in_progress / unlocked
+
+  State mapping: [OWNER: unlocked → unlocked · in_progress → in progress ·
+  archived → locked — confirm]. Render /certifications (section.trophyCase)
+  as the trophy case: one item per Trophy row with the state's icon inline,
+  the state in text (never colour alone), category (certification | award)
+  as text, title, issuer (subtitle), date, and the link to the entry page.
+  The S5/S6 row shape stays underneath (data-status, the same href), so the
+  Recruiter index and the trophy case are one markup with the icon and state
+  added; no second page file. Locked items still link — their entry page is
+  real content. Brief §4.1: machine-learning-foundations must appear once,
+  unlocked, with its certifies edge to break-through-tech on its entry page.
+
+  Not in S8: the meta-trophy, reactions, the full trophy shell
+  (feat/shell-trophy-full), any filter beyond the existing facet chips.
+
+Out of scope: adjacent sub-branches, refactors outside the touched files,
+reopening settled decisions, inventing content of any kind.
+
+Verification: lint · typecheck · test · tokens:check · build · db:reset +
+db:test (extend supabase/tests/routes.test.ts if loadTrophies changes shape;
+otherwise a unit test on the state mapping suffices) · local smoke:
+/certifications 200 with 5 items all unlocked on hosted data, and all three
+states present against the local fixture · the states are legible in both
+themes and with icons hidden · Lighthouse a11y 1.0 · prohibited-term grep
+clean.
+
+Done when: the scope above is implemented, green CI passes, and the preview
+deploy is live.
+
+Then: open a PR into lane/spine with auto-merge (squash) enabled and the
+BUILD_PLAN §7 security block ticked. Write handoff/feat-spine-trophy.md and
+commit it in the same PR, using the handoff format in the Stop rule section
+below. Its Next section is the spine gate below, not a sub-branch. Then stop
+and report. Do not continue after the PR is open even if there is obvious
+remaining work — name it in the handoff instead.
+
+Tripwire: if this sub-branch turns out materially larger than its BUILD_PLAN
+row describes, stop immediately, do not push through. Report what the row missed
+and propose a split into two sub-branches. Scope discovered mid-flight is
+reported, never absorbed.
+
+Blockers: ask. Do not invent content, names, dates, or assets.
+```
+
+---
+
+## After S8 — the spine gate (`lane/spine` → `main`)
+
+Not a session prompt; the one human merge (BUILD_PLAN §2, §7). A close-out chore verifies the merged lane head first-hand, then the owner opens the PR with the §7 checklist and signs it. Spine acceptance (§4): one BTT record in Experience, Projects and the trophy case with zero duplication · the same URL in both renderers · Recruiter path with JS disabled · keyboard through the tile row to a detail page with no trap · green CI, preview live.
+
+What changes the moment it merges, so nobody is surprised:
+
+- `.github/workflows/ci.yml`, `keep-warm.yml` and `dependabot.yml` reach `main`: the keep-warm daily schedule starts running (GitHub runs `schedule` only from the default branch) and Dependabot PRs begin.
+- The Supabase GitHub integration (working directory `.`, production branch `main`) applies `supabase/migrations` to the hosted project. Both migrations were already pushed by hand and are recorded in `supabase_migrations.schema_migrations`; verify it reports nothing to apply rather than assuming.
+- Vercel deploys `main` to Production for the first time with real routes.
+- Every lane branch created afterwards is cut from the new `main`; Pair 1 (`lane/recruiter` + `lane/ingestion`) waits on plan §8's Steam-visibility and domain items.
 
 ---
 

@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -222,3 +221,45 @@ REFERENCES.md
 
 # Visual Studio Code launch configuration file
 launch.json
+
+# --- Node / Next.js (S1 scaffold) -------------------------------------------
+# NOTE: the Python template's bare `lib/` entry was removed in S1 — it would
+# ignore application code under lib/ (e.g. lib/audio/boot-chime.ts).
+
+# dependencies
+node_modules/
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# env files — secrets live in Actions/Vercel secret stores, never in git
+.env*
+.env.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# lighthouse ci local reports
+.lighthouseci/
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+
+# supabase cli scratch (S2)
+supabase/.temp/
+supabase/.branches/
+
+# LinkedIn data export (S3 input) — never committed; only supabase/seed.content.sql is
+Complete_LinkedInDataExport*

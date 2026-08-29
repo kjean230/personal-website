@@ -1,0 +1,177 @@
+# CI — lint · typecheck · test · design-token check · build · Lighthouse budget
+# · database migrations + RLS tests (S2).
+#
+# "CI green" is the single aggregate job and the only required status check
+# (main and lane/* rulesets reference it), so adding a job here only requires
+# extending its `needs` list — ruleset names never drift from job lists.
+#
+# The Lighthouse budgets in lighthouserc.json are sized for the S1 placeholder
+# page and should be tightened per-route as real pages land (brief §9 targets
+# recruiter LCP < 1.5s and Lighthouse a11y 100).
+
+name: CI
+
+on:
+  push:
+    branches: [main, "lane/**"]
+  pull_request:
+    branches: [main, "lane/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  tokens:
+    name: Design tokens check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # Zero-dependency generator — no npm ci needed. Fails on stale generated
+      # output, a contrast pair below AA, or an SVG construction-rule break.
+      - run: npm run tokens:check
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    # The two public Supabase values (repository *variables*, not secrets —
+    # the same ones Vercel holds) so a route that reads content while
+    # prerendering can build here. Only the build and Lighthouse jobs get
+    # them; nothing else in CI talks to the hosted project.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  lighthouse:
+    name: Lighthouse budget
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx lhci autorun
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/reports
+          if-no-files-found: ignore
+
+  db:
+    name: Database migrations & RLS
+    runs-on: ubuntu-latest
+    # Isolated Postgres per run from Supabase's own image, so the RLS roles
+    # and platform schemas match the hosted project, plus PostgREST in front
+    # of it (S4) so the query layer is exercised as `anon` through the same
+    # Data API server production uses. Applies every migration and both seeds
+    # from scratch, then runs the schema, RLS, content, and query-layer tests.
+    # Service containers share one Docker network: `postgrest` reaches `db` by
+    # label; the runner reaches both through the mapped ports. Mirrors
+    # docker-compose.yml — keep the two in step.
+    services:
+      db:
+        image: supabase/postgres:17.6.1.165
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 54322:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h localhost"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 60
+      postgrest:
+        image: postgrest/postgrest:v16.2
+        env:
+          # `postgres`, not `authenticator` — see docker-compose.yml.
+          PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres
+          PGRST_DB_SCHEMAS: public
+          PGRST_DB_ANON_ROLE: anon
+          PGRST_DB_MAX_ROWS: "1000"
+          # Local-only, not a secret (see docker-compose.yml).
+          PGRST_JWT_SECRET: local-postgrest-jwt-secret-not-a-secret-0123456789
+          PGRST_DB_CHANNEL_ENABLED: "true"
+        ports:
+          - 54321:3000
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:apply
+      - run: npm run db:test
+
+  ci-green:
+    name: CI green
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test, tokens, build, lighthouse, db]
+    if: always()
+    steps:
+      - name: Fail unless every needed job succeeded
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}
+        run: |
+          echo "job results: ${{ join(needs.*.result, ', ') }}"
+          exit 1
+      - name: All green
+        run: echo "all jobs succeeded"

@@ -1,0 +1,72 @@
+# Local database for S2+ (BUILD_PLAN §4, S2: "local docker-compose") and, since
+# S4, the Data API in front of it.
+#
+# Two services. Postgres from Supabase's own image, so the roles the RLS
+# policies target (anon, authenticated, service_role), the `auth` schema and
+# the platform extensions exist exactly as they do on the hosted project. And
+# PostgREST — the same server the hosted Data API runs — so the app's query
+# layer (lib/content, supabase-js over PostgREST) is exercised locally and in
+# CI exactly as in production: every request runs as the `anon` role. The
+# rest of the Supabase stack (Kong, Auth, Storage, Studio) does not run here;
+# `supabase start` remains available for it and uses the same two ports, so
+# DATABASE_URL and the API URL are identical either way.
+#
+#   npm run db:up      start both (waits for healthy)
+#   npm run db:apply   apply supabase/migrations/*.sql, then both seeds
+#   npm run db:test    RLS, content, and query-layer tests against them
+#   npm run db:types   regenerate lib/db/database.types.ts from the schema
+#   npm run db:reset   wipe, restart, re-apply
+#   npm run db:psql    psql shell
+#
+# DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+# Data API (PostgREST)   http://127.0.0.1:54321   (no /rest/v1 prefix — that is
+#                        Kong's job on the hosted project; see supabase/tests)
+# (local-only credentials; nothing here is a secret)
+
+services:
+  db:
+    # Keep the major version in step with supabase/config.toml [db].major_version.
+    image: supabase/postgres:17.6.1.165
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -h localhost"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  postgrest:
+    # Same env in .github/workflows/ci.yml (db job) — keep the two in step.
+    image: postgrest/postgrest:v16.2
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "54321:3000"
+    environment:
+      # The hosted project connects PostgREST as `authenticator`, but this
+      # image gives that role no password (the Supabase CLI sets one at
+      # `supabase start`; POSTGRES_PASSWORD only covers `postgres`). Connecting
+      # as `postgres` changes nothing the tests prove: PostgREST runs every
+      # request under `set local role anon` (or the JWT's role), so grants and
+      # RLS apply exactly as on the hosted project — supabase/tests/api.test.ts
+      # asserts that anon cannot read raw `reactions` through it.
+      PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      # Mirrors supabase/config.toml [api] max_rows.
+      PGRST_DB_MAX_ROWS: "1000"
+      # Local-only HS256 key so the tests can mint a `{ "role": "anon" }` JWT
+      # the way the hosted gateway does for a publishable key. Not a secret:
+      # it never leaves this machine or the CI runner, and it guards nothing.
+      PGRST_JWT_SECRET: local-postgrest-jwt-secret-not-a-secret-0123456789
+      # Migrations run after start-up; the image's pgrst_ddl_watch trigger
+      # NOTIFYs a schema-cache reload, and the test harness sends one too.
+      PGRST_DB_CHANNEL_ENABLED: "true"
+
+volumes:
+  db-data:

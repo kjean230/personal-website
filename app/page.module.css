@@ -1,0 +1,49 @@
+/* Home page — every value is a token var(); see app.css header. */
+
+.main {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-16) var(--space-6);
+  text-align: center;
+}
+
+.badge {
+  /* --space-16 is 4rem = 64px, the badge's native size. */
+  width: var(--space-16);
+  height: var(--space-16);
+}
+
+.badge svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+/* The route table's top level: one link per brief §4.3 section, rendered as
+ * the console tile row. The row and the Resume link beside it are styled by
+ * app/(explorer)/explorer.module.css, which owns the shell's presentation;
+ * this rule only gives the nav the full width of the centred column to lay
+ * the tiles out in.
+ */
+.sections {
+  /* .main is a grid with justify-items: center, which would size the nav to
+   * fit-content and collapse the percentage-based tile grid inside it.
+   * justify-self is the inline axis — align-self would be the wrong one.
+   * 20 × 4rem = 80rem caps the row so six tiles stay well over their 12rem
+   * minimum instead of stretching across an ultrawide display.
+   */
+  justify-self: stretch;
+  width: 100%;
+  max-width: calc(var(--space-16) * 20);
+  margin-top: var(--space-4);
+  margin-inline: auto;
+}

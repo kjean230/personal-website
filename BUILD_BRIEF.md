@@ -257,7 +257,7 @@ Lanes 5 and 6 must agree on the URL contract before either starts; write it down
 - [ ] Ingestion runs on schedule, is idempotent, and fails loudly without breaking renders
 - [ ] Zero Nintendo or third-party assets in the repo or bundle
 - [ ] No secrets committed; all in Actions/Vercel secret storage
-- [ ] Preview deploy per PR with an isolated database branch
+- [ ] Preview deploy per PR; database isolation is the CI database job.
 
 ---
 
