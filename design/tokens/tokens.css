@@ -101,14 +101,22 @@
   --elevation-3: 4px 4px 0 0 var(--color-shadow);
   --elevation-accent: 4px 4px 0 0 var(--color-primary);
 
-  /* ---- colour, theme-independent ------------------------------------------- */
+  /* ---- colour, theme-independent -------------------------------------------
+     Static because print needs them. A print stylesheet inherits
+     prefers-color-scheme, so a visitor whose system is dark would otherwise
+     print the ink theme: near-white text onto a sheet whose background the
+     printer omits by default. `app/app.css` pins the themed colours to these
+     inside `@media print` — which cannot live in this file, because build.mjs
+     accepts exactly the four blocks this file declares and fails on a fifth. --color-ink-muted is
+     the single source for the light --color-text-muted below. */
   --color-ink: #17160F;
+  --color-ink-muted: #5A574B;
 
   /* ---- colour, light theme ("paper") --------------------------------------- */
   --color-surface: #F6F1E6;
   --color-surface-raised: #FFFDF8;
   --color-text: #17160F;
-  --color-text-muted: #5A574B;
+  --color-text-muted: var(--color-ink-muted);
   --color-primary: #E8B11B;
   --color-on-primary: #17160F;
   --color-primary-text: #7A5A00;

@@ -4,13 +4,20 @@ import { loadResume } from "@/lib/routes/load";
 import { entryHref } from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
 import { EntryDates } from "../entry-dates";
+import { Contact } from "./contact";
 import styles from "../site.module.css";
 
 // `/resume` — brief §2.2: plain HTML, reachable in one action from anywhere
-// (the site header links it). Entries only: the name comes from the layout's
-// one constant, and there is deliberately no contact block, headline or
-// profile link. A contact line needs owner-supplied values and belongs to
-// feat/recruiter-resume-print.
+// (the site header links it), and print-friendly since
+// feat/recruiter-resume-print. The name comes from the layout's one constant;
+// below it sit the four contact values BUILD_PLAN §8 settled (contact.tsx owns
+// them, and is the only file in the tree that carries any), then the entries.
+// Still no headline and no profile summary — those would be content, and
+// content is lane/content's.
+//
+// Printing: the colour pin is in app/app.css and the layout rules are in
+// app/site.module.css. Neither is visible to lint, typecheck, tests,
+// tokens:check or Lighthouse, so they are verified by emulating print media.
 //
 // Rendering mode: this route reads content but takes no dynamic input, so it
 // prerenders at build and revalidates on the query layer's inherited 3600 s
@@ -27,6 +34,7 @@ export default async function ResumePage() {
   return (
     <main id="main" className={styles.main}>
       <h1 className={styles.heading}>{SITE_NAME}</h1>
+      <Contact />
       {sections.map((section) => (
         <section key={section.id} aria-labelledby={`resume-${section.id}`} className={styles.resumeSection}>
           <h2 id={`resume-${section.id}`} className={styles.subheading}>
