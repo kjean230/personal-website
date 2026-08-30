@@ -70,7 +70,7 @@ Where they disagree on order, branching, or lane composition, the plan wins. Sco
 
 **Auth is admin-only** (Supabase Auth, one user, guards `/admin`). **Reactions are anonymous emoji only:** fixed server-side allowlist, salted `ip_hash` (never raw IP), edge rate limit, RLS allowing anon `insert` + aggregate `select` only.
 
-**Stack** (decided, brief §3): Next.js App Router + TypeScript · Vercel Hobby · Supabase Postgres / Auth / Storage · GitHub Actions cron (not Vercel Cron) · Zod at every boundary · cookie-free analytics. Cost target $0 + domain. Never commit binaries; tile art and screenshots go to Supabase Storage.
+**Stack** (decided, brief §3): Next.js App Router + TypeScript · Vercel Hobby · Supabase Postgres / Auth / Storage · GitHub Actions cron (not Vercel Cron) · Zod at every boundary · cookie-free analytics. Cost target $0 + domain. Never commit binaries; tile art and screenshots go to Supabase Storage. No third-party code under a licence incompatible with MIT enters the tree; skills and plugins are installed, never vendored, and their source-available files (`anthropics/skills`' `docx`, `pdf`, `pptx`, `xlsx`) are the named case.
 
 ## Non-negotiable constraints
 
