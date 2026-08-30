@@ -626,6 +626,215 @@ What changed the moment it merged, and what actually happened — recorded by `c
 
 ---
 
+## Pair 1 — `lane/recruiter`
+
+Written ahead of the lane by `chore/spine-loose-ends`, because `PROMPTS.md:122` records that from S6 on each session's block is committed here before it runs, and the post-gate chore added a **Pair 2** block while Pair 1 had none — which left the two out of order. This section fixes the order; it decides no scope the plan had not already decided.
+
+State at the time of writing (2026-08-30), so the agent verifies rather than assumes: `main` = the spine gate (`2c80113`) plus the post-gate docs chore (#34), three Dependabot merges (#27 `actions/upload-artifact`, #30 `next` 16.3.2 → 16.3.3, #33 `@types/node` 26) and `chore/spine-loose-ends`. `lane/recruiter` does not exist yet and is cut **from `main`**, never from `lane/spine`; a new `lane/*` branch inherits the `lane-protection` ruleset automatically, so sub-branch → lane auto-merges on green CI with no human step (BUILD_PLAN §2.1). The lane is blocked on nothing: both of its plan §8 rows are settled — the domain, and the resume contact values.
+
+**The lane is half the size BUILD_PLAN §5 implies, and §5 is annotated to say so. Do not re-scope the two delivered rows.** `feat/recruiter-sections` was delivered by S6 + S8: all six sections render semantically through two page files, with no per-section branch except `trophyCase`, an empty state, and exactly one `<h1>` per page. `feat/recruiter-facets` was delivered by S5 + S6: counts are live from `getFacetCounts` and never hardcoded, the "All" chip is present and first, the active state is `aria-current="page"` plus real CSS, and empty sections degrade to `All (0)` under exact-array assertions. What is left inside those two rows is **data** (`hobby` / `interest` / `post` have no rows → `lane/content`) or **media** (→ `feat/admin-media`), not lane work. **The lane's real work is the two blocks below.** Optional polish that neither block requires and either may pick up: facet icons (six unused `design/assets/icons/facet-*.svg`) and an "Other" chip for the computed-but-unsurfaced `count.unfaceted`.
+
+Two traps span the lane, and **nothing local will reveal either one**:
+
+- **`readFileSync` plus the Edge runtime.** `app/(explorer)/tiles.ts` and the KJ badge read in `app/page.tsx` both use a literal `readFileSync(join(process.cwd(), …))`, and **`next/og` defaults to the Edge runtime, where `node:fs` does not exist.** An OG route that reaches for those assets needs either `export const runtime = "nodejs"` **plus** a new `outputFileTracingIncludes` entry in `next.config.ts` (the existing entries cover `/[section]` and `/[section]/[slug]` only), or the SVG source inlined into the route. **The failure is an ENOENT in the deploy and nowhere else** — `next start` and Lighthouse both run from the repo root, where the whole repo is on disk, so a clean local run proves nothing about it.
+- **Lighthouse's SEO category is already 1.00 and will stay 1.00** with no sitemap, no OG image and no JSON-LD. The category audits the tags a page already has; it does not audit the ones it lacks. **`feat/recruiter-seo` therefore has no safety net** — every acceptance item on it is verified by hand or not at all.
+
+Also standing, from the gate: **Vercel Deployment Protection covers Production as well as previews, and Vercel SSO returns a 200 on every path**, `/nonexistent` included. Grep the response body for `<title>Login – Vercel</title>` before believing any status code from a Vercel host.
+
+**Session A — `feat/recruiter-resume-print`.** The smaller of the two and the recommended first: unblocked, self-contained, and the owner of the repo's first `@media print` rules.
+
+```
+Context: read CLAUDE.md, BUILD_BRIEF.md, and BUILD_PLAN.md in the repo before
+doing anything. The repo copy of each is authoritative.
+
+Precedence: the brief governs scope and constraints. The plan governs order,
+branching, and gates. CLAUDE.md governs repo conventions only — commands, code
+style, file layout. Where brief §8 and the plan disagree, the plan wins. Where
+CLAUDE.md contradicts either on scope or sequencing, the brief and plan win, and
+you flag the contradiction instead of silently picking one.
+
+Read next: the Pair 1 section of this file (above this block) for the lane's
+state and its two traps; handoff/chore-post-gate-closeout.md and
+handoff/chore-spine-loose-ends.md (Deferred and Open questions); then
+app/resume/page.tsx, lib/routes/load.ts (loadResume), app/site.module.css and
+design/tokens/tokens.css.
+
+Task: Pair 1 — feat/recruiter-resume-print
+
+Branch: create lane/recruiter from main after `git fetch origin --prune`, then
+feat/recruiter-resume-print from lane/recruiter. Never from lane/spine, which
+survives at cb11f9f and is not an ancestor of main (the gate was a squash).
+
+Scope: print-friendly /resume, plus the contact block S6 deliberately left out.
+
+  The contact values are settled in BUILD_PLAN §8 (2026-08-29) and are the
+  only four that ship — email kerwynjean123@gmail.com, LinkedIn
+  https://www.linkedin.com/in/kerwynjean/, GitHub https://github.com/kjean230,
+  location New York, NY. No phone, no street address, no personal-site URL.
+  They ship in public HTML and the email is scrapable; the owner was told and
+  chose to include it, so do not obfuscate it, do not add a mailto trick, and
+  do not ask again.
+
+  Print rules are the substance. Two things will bite:
+
+    - design/tokens/tokens.css defines the dark palette under a
+      prefers-color-scheme media query, which a print stylesheet inherits. A
+      visitor printing in dark mode would get dark-on-dark, or a page that
+      floods the sheet with ink. Pin the light values (or handle it through
+      print-color-adjust) inside @media print and prove it — a screenshot of
+      the print preview in both themes, not an assertion.
+    - S6's close-out greps treat `gmail`, `@fordham.edu` and `linkedin.com/in/`
+      as leak markers, because until now nothing in the tree was allowed to
+      carry them. They will fire on this sub-branch by design. Retarget them
+      (exclude app/resume/ and the seed) rather than dropping the check, and
+      say in the handoff what the new shape is — the next session inherits it.
+
+  Tokens only: every value in the print block is a var() from
+  design/tokens/tokens.css, `npm run tokens:check` must pass, and a new
+  measurement belongs in tokens.css rather than in the stylesheet.
+
+Out of scope: adjacent sub-branches, refactors outside the touched files,
+reopening settled decisions, inventing content of any kind. In particular: no
+sitemap, no OG route, no JSON-LD, no metadataBase — those are Session B, and
+metadataBase lands there and nowhere else.
+
+Verification: lint · typecheck · test · tokens:check · build (record every
+route's mode; /resume must stay ○ with its 1h revalidate column) · the print
+rendering checked in both themes · Lighthouse a11y 1.0 on all five audited URLs
+and the script budget recorded against the 250,000 B cap · a leak grep whose
+shape you state · prohibited-term grep over the diff, by hand — design/tokens/
+build.mjs's PROHIBITED_TERMS never scans prose, so CI cannot catch a slip in
+Markdown.
+
+Done when: the scope above is implemented, green CI passes, and the preview
+deploy is live.
+
+Then: open a PR into lane/recruiter with auto-merge (squash) enabled and the
+BUILD_PLAN §7 security block ticked. Write
+handoff/feat-recruiter-resume-print.md and commit it in the same PR, using the
+handoff format in the Stop rule section below. Then stop and report. Do not
+begin the next sub-branch. Do not continue after the PR is open even if there
+is obvious remaining work — name it in the handoff instead.
+
+Tripwire: if this sub-branch turns out materially larger than its BUILD_PLAN
+row describes, stop immediately, do not push through. Report what the row missed
+and propose a split into two sub-branches. Scope discovered mid-flight is
+reported, never absorbed.
+
+Blockers: ask. Do not invent content, names, dates, or assets.
+```
+
+**Session B — `feat/recruiter-seo`.** The bulk of the lane, and the one with no safety net.
+
+```
+Context: read CLAUDE.md, BUILD_BRIEF.md, and BUILD_PLAN.md in the repo before
+doing anything. The repo copy of each is authoritative.
+
+Precedence: the brief governs scope and constraints. The plan governs order,
+branching, and gates. CLAUDE.md governs repo conventions only — commands, code
+style, file layout. Where brief §8 and the plan disagree, the plan wins. Where
+CLAUDE.md contradicts either on scope or sequencing, the brief and plan win, and
+you flag the contradiction instead of silently picking one.
+
+Read next: the Pair 1 section of this file (above this block) — its two traps
+are this sub-branch's, not background; then handoff/feat-recruiter-resume-print
+.md, handoff/feat-spine-routes.md (Deferred), lib/routes/table.ts (the URL
+contract), app/layout.tsx (the one metadata export today),
+app/(explorer)/tiles.ts (how an SVG is read at build) and next.config.ts (why
+outputFileTracingIncludes exists).
+
+Task: Pair 1 — feat/recruiter-seo
+
+Branch: create feat/recruiter-seo from lane/recruiter after `git fetch origin`.
+Auto-merge means the lane already contains Session A; never branch from
+feat/recruiter-resume-print.
+
+Scope: OG images · sitemap · structured data · alternates.canonical ·
+metadataBase.
+
+  metadataBase = https://kerwynjean.dev. It lands in this sub-branch and
+  NOWHERE ELSE — plan §8's domain row is settled (Porkbun) and names this as
+  its landing place. The domain does not resolve yet: HTTPS fails outright and
+  DNS is still on Porkbun parking. So the absolute URLs it generates can be
+  checked for SHAPE and never for reachability, and a test that fetches one is
+  a test that will fail for a reason unrelated to your change. Vercel domain
+  attach, DNS and auto-renew stay the owner's.
+
+  The sitemap and robots come from the route table, not from a literal list:
+  SECTIONS for the section URLs and the query layer for the entry URLs, so
+  adding a section stays one SECTIONS entry (S5's rule). Reserved routes
+  (/privacy, /admin) have no page and belong in neither.
+
+  Structured data is the one convention this sub-branch has to bend, so bend
+  it deliberately and record it: CLAUDE.md names lib/render/markdown.ts as the
+  ONE place raw HTML is produced, and a <script type="application/ld+json">
+  is a second injection. Build the object and JSON.stringify it with `<`
+  escaped; do not hand-write the JSON, and add a sentence to CLAUDE.md naming
+  the exception rather than leaving the rule looking violated.
+
+  THE TRAP THAT NOTHING LOCAL WILL REVEAL — read this twice. next/og defaults
+  to the Edge runtime, where node:fs does not exist, and both
+  app/(explorer)/tiles.ts and the badge read in app/page.tsx use a literal
+  readFileSync(join(process.cwd(), …)). An OG route that reaches for those
+  assets needs EITHER `export const runtime = "nodejs"` plus a new
+  outputFileTracingIncludes entry in next.config.ts for the OG route's own
+  path, OR the SVG source inlined into the route. The failure is an ENOENT in
+  the deploy and nowhere else: next start and Lighthouse both run from the repo
+  root, where the whole repo is on disk, so a clean local run is not evidence.
+  State in the handoff which of the two you chose and why.
+
+  THE SECOND TRAP: Lighthouse's SEO category already scores 1.00 on all five
+  audited URLs and will keep scoring 1.00 with no sitemap, no OG image and no
+  JSON-LD. It audits the tags a page has, not the ones it lacks. There is no
+  safety net on this sub-branch — every item below is verified by hand or not
+  at all:
+    - fetch /sitemap.xml and /robots.txt, and assert the URL set equals the
+      route table's, entry by entry;
+    - fetch the OG route, and assert content type and a non-trivial byte size
+      (an OG route that throws still returns something);
+    - parse the ld+json with JSON.parse and assert the fields, rather than
+      eyeballing the markup;
+    - assert alternates.canonical on a section page, an entry page and
+      /resume.
+
+  Optional, if the budget and the session allow: facet icons (six unused
+  design/assets/icons/facet-*.svg) and an "Other" chip for the
+  computed-but-unsurfaced count.unfaceted. Neither is required; say which you
+  did.
+
+Out of scope: adjacent sub-branches, refactors outside the touched files,
+reopening settled decisions, inventing content of any kind. Security headers
+are Phase 3, not this sub-branch, even though they are adjacent to metadata.
+
+Verification: lint · typecheck · test · tokens:check · build (record every
+route's mode, and whether the OG route is ƒ or ●) · the four by-hand checks
+above · Lighthouse a11y 1.0 and the script budget against the 250,000 B cap ·
+prohibited-term grep over the diff, by hand, including any new alt text —
+brief §2.1 covers metadata and alt text explicitly, and this sub-branch writes
+more metadata than every prior one combined.
+
+Done when: the scope above is implemented, green CI passes, and the preview
+deploy is live.
+
+Then: open a PR into lane/recruiter with auto-merge (squash) enabled and the
+BUILD_PLAN §7 security block ticked. Write handoff/feat-recruiter-seo.md and
+commit it in the same PR, using the handoff format in the Stop rule section
+below. Its Next section is the lane/recruiter → main gate (BUILD_PLAN §7), not
+a sub-branch. Then stop and report. Do not continue after the PR is open even
+if there is obvious remaining work — name it in the handoff instead.
+
+Tripwire: if this sub-branch turns out materially larger than its BUILD_PLAN
+row describes, stop immediately, do not push through. Report what the row missed
+and propose a split into two sub-branches. Scope discovered mid-flight is
+reported, never absorbed.
+
+Blockers: ask. Do not invent content, names, dates, or assets.
+```
+
+**`lane/ingestion`, Pair 1's other half, has no block here on purpose.** It is still blocked on plan §8's Steam profile visibility, and on plan §9's verify-at-build-time items — Vercel Hobby non-commercial terms, Supabase free-tier pause behaviour, and current Spotify / Steam / IGDB API access terms including IGDB cover-art usage rights before any box art is displayed. Writing its block before those are settled would be inventing the answers.
+
+---
+
 ## Pair 2 — motion notes (`lane/console-shell`)
 
 Not a session prompt; scoping notes recorded ahead of the lane by `chore/post-gate-closeout`, because they existed only in conversation and would otherwise have been lost. Pair 2 runs **after Pair 1 merges** (plan §5 — Play Activity depends on ingested data existing). The motion → sub-branch mapping is in `BUILD_PLAN.md` §5; the borrowed-grammar reasoning is in `DESIGN.md`; the annotated sources are in the git-ignored `REFERENCES.md`, whose absence in a fresh clone is normal and is not a blocker.
