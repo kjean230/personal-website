@@ -402,3 +402,86 @@
   padding: var(--space-4) 0;
   border-bottom: var(--border-hairline);
 }
+
+/* The contact block (BUILD_PLAN §8, settled 2026-08-29), rendered by
+ * app/resume/contact.tsx on /resume only. One new class name, deliberately:
+ * app/error.tsx imports this stylesheet, so every name here ships in the
+ * client bundle's class-name map on every route. Everything inside reuses
+ * .linkList / .linkItem / .chip, and <address>'s UA italic is undone here.
+ */
+.contact {
+  margin: 0 0 var(--space-6);
+  font-style: normal;
+}
+
+/* The location is not a link, so it has no .chip to give it a target height;
+ * match the row so the four values sit on one baseline. */
+.contact .linkItem {
+  min-height: var(--size-touch-min);
+}
+
+.contact .chip {
+  border: 0;
+  padding: 0 var(--space-2) 0 0;
+}
+
+/* Print (feat/recruiter-resume-print). The colour half of this lives in
+ * app/app.css, which pins the themed tokens to the static ink ones; everything
+ * below is layout. There is no @page rule: custom properties do not resolve in
+ * the page context, so a tokenised @page { margin } is impossible and a
+ * hardcoded one is forbidden — the UA's own page margins are used instead.
+ */
+@media print {
+  /* Screen affordances. The skip link is a keyboard target and the header is
+     navigation; neither means anything on paper. */
+  .skipLink,
+  .header {
+    display: none;
+  }
+
+  .main {
+    max-width: none;
+    padding: 0;
+  }
+
+  /* ≥44px targets are a touch requirement (brief §2.2), not a paper one; on a
+     printed sheet they only spend vertical space. */
+  .contact .linkItem,
+  .indexTitle .entryLink,
+  .resumeTitle .entryLink,
+  .chip,
+  .tag {
+    min-height: 0;
+  }
+
+  /* Keep a heading with what it introduces, and a row on one sheet. */
+  .subheading {
+    break-after: avoid;
+  }
+
+  .indexEntry,
+  .resumeRow {
+    break-inside: avoid;
+  }
+
+  /* Panels the printer would otherwise fill with toner. */
+  .body code,
+  .body pre {
+    background: none;
+  }
+
+  /* An entry's links are chips carrying a human label ("Credential"), which
+     points nowhere on paper — so print the URL. Scoped to .resumeRow, because
+     the contact block's link text is already the URL verbatim and would come
+     out doubled. */
+  .resumeRow .linkList .chip {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .resumeRow .linkList .chip::after {
+    content: " (" attr(href) ")";
+    font-size: var(--text-xs);
+  }
+}

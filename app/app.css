@@ -35,3 +35,40 @@ samp {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
+
+/* Print. A print stylesheet inherits prefers-color-scheme, so a visitor whose
+ * system is dark prints the ink theme: --color-text is #F2ECDD, near-white, onto
+ * a sheet whose --color-surface the printer omits by default. The page comes out
+ * effectively blank, and nothing in lint, typecheck, tests, tokens:check or
+ * Lighthouse can see it.
+ *
+ * Pin the themed colours to the static ink tokens instead — paper is the paper,
+ * ink is the ink. This block cannot live in tokens.css: build.mjs accepts four
+ * blocks there and fails on a fifth, so the pin belongs here, where the file's
+ * charter (var() consumption only) still holds. The three selectors mirror
+ * tokens.css's three theme blocks so each ties on specificity and wins on source
+ * order — app/layout.tsx imports tokens.css before this file.
+ *
+ * --border-hairline, --border-strong and --elevation-* are static composites
+ * that reference these colour tokens, and custom-property substitution is lazy,
+ * so they inherit the pin without being restated.
+ */
+@media print {
+  :root,
+  :root:not([data-theme="light"]),
+  :root[data-theme="dark"] {
+    --color-text: var(--color-ink);
+    --color-text-muted: var(--color-ink-muted);
+    --color-primary-text: var(--color-ink);
+    --color-border-subtle: var(--color-ink);
+    --color-border-strong: var(--color-ink);
+    --color-outline-accent: var(--color-ink);
+  }
+
+  /* --color-surface is deliberately not pinned: printers omit backgrounds, and
+     painting the sheet cream for anyone who enables background graphics is
+     worse than not painting it. */
+  body {
+    background: none;
+  }
+}
