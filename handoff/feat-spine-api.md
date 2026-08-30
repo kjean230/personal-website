@@ -60,4 +60,4 @@ Nothing structural — every value in brief §4's lists is accepted, and the tes
 3. ~~The seed edits and hosted load stand as recorded in `handoff/chore-spine-s3-closeout.md`; until then every renderer sees an empty hosted site. *(Still open on 2026-08-26: the seed was unchanged in the working tree when chore/spine-s4-closeout ran, so no load happened.)*~~ — **done 2026-08-27 (chore/spine-hosted-seed):** see `handoff/chore-spine-hosted-seed.md`.
 
 ## Next
-S5 — `feat/spine-routes` on `lane/spine`: the shared route table both renderers bind to, written against the contract above (`listSection` per section, `getEntryBySlug` per entry URL, `getFacetCounts` for chips, `listTrophies` for the trophy case). Not started.
+S5 — `feat/spine-routes` on `lane/spine`: the shared route table both renderers bind to, written against the contract above (`listSection` per section, `getEntryBySlug` per entry URL, `getFacetCounts` for chips, `listTrophies` for the trophy case). ~~Not started.~~ — **done 2026-08-27, PR #17, squash `d3890d4`** (`handoff/feat-spine-routes.md`; merged head verified by `chore/spine-s5-closeout`).

@@ -610,16 +610,48 @@ Blockers: ask. Do not invent content, names, dates, or assets.
 
 ---
 
-## After S8 — the spine gate (`lane/spine` → `main`)
+## After S8 — the spine gate (`lane/spine` → `main`) — **merged 2026-08-29**
 
-Not a session prompt; the one human merge (BUILD_PLAN §2, §7). A close-out chore verifies the merged lane head first-hand, then the owner opens the PR with the §7 checklist and signs it. Spine acceptance (§4): one BTT record in Experience, Projects and the trophy case with zero duplication · the same URL in both renderers · Recruiter path with JS disabled · keyboard through the tile row to a detail page with no trap · green CI, preview live.
+Not a session prompt; the one human merge (BUILD_PLAN §2, §7). A close-out chore verified the merged lane head first-hand (`chore/spine-s8-closeout`, PR #25), then the owner opened the PR with the §7 checklist and signed it. Spine acceptance (§4), all five supplied: one BTT record in Experience, Projects and the trophy case with zero duplication · the same URL in both renderers · Recruiter path with JS disabled · keyboard through the tile row to a detail page with no trap · green CI, preview live.
 
-What changes the moment it merges, so nobody is surprised:
+**Merged: PR #26, squash `2c80113`, 2026-08-29 20:52:19 UTC, all 8 CI jobs green** (Lint, Typecheck, Test, Design tokens check, Build, Lighthouse budget, Database migrations & RLS, `CI green`). The body as published carried 17 `[x]` and 1 `[ ]` — box 18 (error boundaries) was deliberately left unticked as a signed exception deferred to Phase 3. It was merged with `--admin`, because GitHub refuses to let anyone approve their own pull request and the owner is the sole bypass actor on `main-protection`. **Expect that on every future lane → `main` merge; it is not a misconfiguration.**
 
-- `.github/workflows/ci.yml`, `keep-warm.yml` and `dependabot.yml` reach `main`: the keep-warm daily schedule starts running (GitHub runs `schedule` only from the default branch) and Dependabot PRs begin.
-- The Supabase GitHub integration (working directory `.`, production branch `main`) applies `supabase/migrations` to the hosted project. Both migrations were already pushed by hand and are recorded in `supabase_migrations.schema_migrations`; verify it reports nothing to apply rather than assuming.
-- Vercel deploys `main` to Production for the first time with real routes.
-- Every lane branch created afterwards is cut from the new `main`; Pair 1 (`lane/recruiter` + `lane/ingestion`) waits on plan §8's Steam-visibility and domain items.
+What changed the moment it merged, and what actually happened — recorded by `chore/post-gate-closeout`, so nobody re-derives it:
+
+- `.github/workflows/ci.yml`, `keep-warm.yml` and `dependabot.yml` reached `main`. **Dependabot began immediately: 7 PRs (#27–#33).** Two are CI-red, both failing the `Lint` job — #31 (typescript 5.9.3 → 7.0.2) and #32 (eslint 9.39.5 → 10.9.1) — so neither can merge while `CI green` is required. Two Dependabot *update jobs* also failed, for `tmp` and `uuid`: both are deep `@lhci/cli` transitives Dependabot cannot bump independently, dev-tree only, zero runtime impact — not a repo defect. **keep-warm had not yet fired on schedule**: its cron is `17 9 * * *` and GitHub runs `schedule` only from the default branch, so the first scheduled run was due 2026-08-30 09:17 UTC. Expected, not a fault.
+- The Supabase GitHub integration (working directory `.`, production branch `main`) applies `supabase/migrations` to the hosted project. Both migrations were already pushed by hand and are recorded in `supabase_migrations.schema_migrations`, so the expected result is "nothing to apply" — **but this remains UNVERIFIED.** The `Supabase Preview` check reported success and exposes an *empty output body* (confirmed against the check-runs API), so "nothing to apply" is consistent with that result rather than proven by it. The dashboard integration log is the only place that states it outright. Do not claim it; verify it or record it as unverified.
+- Vercel deployed `main` to Production for the first time with real routes, and the deployment succeeded. **The site is not publicly reachable, for two independent reasons**: Vercel Deployment Protection covers Production as well as previews, so every host 302s to `vercel.com/login` and serves `<title>Login – Vercel</title>`; and `kerwynjean.dev` is not wired (HTTPS fails outright, DNS still on Porkbun parking). Both are the owner's to fix. ⚠ **Vercel SSO returns a 200 on every path, `/nonexistent` included** — always grep the response body for that title before believing a status code from a Vercel host.
+- Every lane branch created afterwards is cut from the new `main`. Pair 1 (`lane/recruiter` + `lane/ingestion`) is now blocked only on plan §8's Steam-visibility item; the domain item is settled.
+- `lane/spine` **could not be deleted from origin** and survives at `cb11f9f`. The `lane-protection` ruleset carries a `deletion` rule with an empty bypass list, so nobody — the owner included — can delete a `lane/*` branch while it is active. Harmless, but note that a squash merge means it is **not an ancestor of `main`**, so ancestry checks will mislead: match a branch to its merged PR by `headRefName` and test *that PR's* `mergeCommit.oid` instead.
+
+---
+
+## Pair 2 — motion notes (`lane/console-shell`)
+
+Not a session prompt; scoping notes recorded ahead of the lane by `chore/post-gate-closeout`, because they existed only in conversation and would otherwise have been lost. Pair 2 runs **after Pair 1 merges** (plan §5 — Play Activity depends on ingested data existing). The motion → sub-branch mapping is in `BUILD_PLAN.md` §5; the borrowed-grammar reasoning is in `DESIGN.md`; the annotated sources are in the git-ignored `REFERENCES.md`, whose absence in a fresh clone is normal and is not a blocker.
+
+The owner wants: hover/focus zoom on tiles, image zoom, shape morphing, click-through transitions, console-style icon presentation and navigation, and smooth scrolling.
+
+**⚠ There is no video comprehension in this harness. State this plainly rather than working around it.** `WebFetch` can pull a page's text — title, description, sometimes a published transcript — but never frames, timing or easing. "Watch these and apply the transitions" is not achievable, and attempting it produces confidently invented detail. Workable substitutes, in descending fidelity:
+
+1. **The owner describes the motion** — e.g. "tile scales to ~1.06 over ~200 ms, neighbours dim, shadow lifts, settles with slight overshoot." More precise than anything extractable from video.
+2. **The owner screenshots keyframes** — images are readable. Three frames of a morph (start / mid / end) conveys almost everything.
+3. **Read a live page's CSS** — fetching and reading actual `transition` / `transform` declarations is closer to ground truth than video.
+
+The scoping ask, at Pair 2 time: one sentence per motion describing the feel, plus a keyframe screenshot or two.
+
+**⚠ IP is the sharpest edge here — brief §2.1, non-negotiable.** "Navigates like a handheld console" is the borrowed grammar and the entire point. "Looks visually like a specific console" is protected expression. The console-navigation references are the risky ones: copying icon designs from them is squarely prohibited. The 29 icons in `design/assets/icons/` are already original and already inlined into a working, keyboard-navigable tile row by `app/(explorer)/tiles.ts`. **What is missing is motion, not iconography — do not redraw icons against a video reference.** Note that `design/tokens/build.mjs`'s `PROHIBITED_TERMS` check covers SVGs, `tokens.css`, the chime files and the generated outputs — **it does not scan prose**, so prohibited terms in Markdown are caught by review, not by CI.
+
+Constraints that will actually bite, all enforced continuously by CI rather than at a phase gate:
+
+- **Script budget: 250,000 B cap, 140,874 B used at the gate, 108,082 B headroom.** It is a Lighthouse assertion, so a blown budget fails the build. Framer Motion alone is a large fraction of that. Default to CSS transitions plus the Web Animations API, JS for orchestration only; a motion library is a real architectural decision.
+- **`prefers-reduced-motion` must disable boot, zoom and parallax** (brief §2.2). `design/tokens/tokens.css` already zeroes the duration tokens under that query, so motion built on those tokens inherits compliance for free. Hardcoded durations are the failure mode to watch for.
+- **All easings and durations live in `tokens.css`**; new ones go there and are regenerated by `node design/tokens/build.mjs`, and `--check` fails CI on stale output. `tokens.json`, `CONTRAST.md` and `specimen.html` are generated — never edit them.
+- **JS-off must keep working.** Zoom and morph are enhancements over a working page, which is a spine acceptance item.
+- **Adding a class to `explorer.module.css` costs client bytes**, because `tile-row.tsx` is a `"use client"` island that imports it — S8's two classes were its whole +15 B script delta. The drawings never ship.
+- **Touch targets ≥44 px** (`--size-touch-min`, applied in 8 rules) — zoom must not break this. **Contrast AA in both themes** — 68/68 pairs passing.
+
+**Overseeing an implementation agent.** A screenshot cannot show a transition: motion is time, a screenshot is one frame. Split the problem — capture **filmstrips** (`puppeteer-core` is already available via the `@lhci/cli` dev tree; keep the driver *out* of the repo, loaded via `createRequire`, or it enters `typecheck` and `lint`), and **assert computed styles** at rest vs. hover, plus that they collapse to zero under `prefers-reduced-motion`. Chrome DevTools MCP gives genuinely live interaction and is worth setting up. None of it replaces the owner on `npm run dev`: feel is the actual acceptance criterion.
 
 ---
 

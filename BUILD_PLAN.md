@@ -32,9 +32,14 @@ Companion to the Build Brief. The brief defines *what*; this defines *in what or
 
 ```
 main                        protected; no direct pushes
-lane/<name>                 long-lived; one per lane; rebased on main after every main merge
+lane/<name>                 long-lived; one per lane; cut from main; rebased on main after every main merge
 feat/<lane>-<slice>         stacked sub-branch; branched from and merged into its lane branch
+chore/<slice>               docs/verification branch; cut from — and merged into — whichever branch
+                            holds the documents it corrects: an open lane while that lane is live,
+                            otherwise main
 ```
+
+A `chore/*` branch is not a sub-branch and has no plan row; its handoff writes `**Plan row:** none — …`. Before the spine reached `main` every docs chore targeted `lane/spine`, because `main` carried no `.github/` and the required `CI green` check could never report on a branch cut from it. That constraint ended at the spine gate.
 
 - Sub-branch → lane: **auto-merge on green CI**. No sign-off, no human step. The agent opens the PR with auto-merge enabled and stops; CI merges it. See §2.1.
 - Lane → main: **green CI + acceptance checklist signed off by owner**.
@@ -135,7 +140,8 @@ Branch: `lane/spine`. Sub-branches stacked in order; each depends on the one bef
 Disjoint: app routes vs. `.github/workflows` and worker scripts.
 
 **`lane/recruiter`** — all sections rendered semantically · print-friendly `/resume` · OG images · sitemap · structured data · facet chips with live counts from the query
-Sub-branches: `feat/recruiter-sections`, `feat/recruiter-facets`, `feat/recruiter-resume-print`, `feat/recruiter-seo`
+Sub-branches: ~~`feat/recruiter-sections`~~, ~~`feat/recruiter-facets`~~, `feat/recruiter-resume-print`, `feat/recruiter-seo`
+Two rows were delivered by the spine and need no sub-branch — **verified 2026-08-29 (`chore/post-gate-closeout`)**: `feat/recruiter-sections` by S6 + S8 (all six sections render semantically through two page files, with no per-section branch except `trophyCase`, an empty state, and exactly one `<h1>` per page), and `feat/recruiter-facets` by S5 + S6 (counts live from `getFacetCounts`, never hardcoded; "All" chip first; active state is `aria-current="page"` plus real CSS; empty sections degrade to `All (0)` under exact-array assertions). What is left in each is data (`hobby` / `interest` / `post` have no rows → `lane/content`) or media (→ `feat/admin-media`), not lane work. Optional polish still unclaimed: facet icons (six unused `design/assets/icons/facet-*.svg`) and an "Other" chip for the computed-but-unsurfaced `count.unfaceted` — `feat/recruiter-seo`'s session may pick these up. **The lane's real work is `feat/recruiter-resume-print` and `feat/recruiter-seo`.**
 
 **`lane/ingestion`** — Spotify OAuth + recently-played + top tracks/artists · Steam Web API playtime and achievements · IGDB metadata · Actions cron schedules · secrets handling · idempotent upserts · retry with backoff · structured logging · last-known-good serving
 Sub-branches: `feat/ingest-spotify`, `feat/ingest-steam`, `feat/ingest-igdb`, `feat/ingest-scheduling`
@@ -147,6 +153,8 @@ Overlap risk: shared components directory. Shell owns `app/(explorer)`, admin ow
 
 **`lane/console-shell`** — largest lane, most sub-branches:
 `feat/shell-boot-profile` (≈1.2s boot, skippable, once per session; profile select) · `feat/shell-tile-grid` (tile row, All Software index, search) · `feat/shell-facets` · `feat/shell-detail-panel` · `feat/shell-trophy-full` · `feat/shell-play-activity` · `feat/shell-album-news` · `feat/shell-settings-notifications` (settings, notification rail, hold-HOME overlay) · `feat/shell-gamepad` · `feat/shell-mobile`
+
+**Motion, mapped onto the rows above** (owner's direction, recorded 2026-08-29 by `chore/post-gate-closeout`; adds no sub-branch and no scope). Hover/focus zoom on tiles, smooth scrolling, and the icon-display grammar → `feat/shell-tile-grid` · shape morphing and the click → detail transition → `feat/shell-detail-panel` · boot-sequence motion → `feat/shell-boot-profile` · touch and momentum behaviour → `feat/shell-mobile` · every other row inherits the conventions once set. The sources are annotated per sub-branch in the git-ignored `REFERENCES.md`; the borrowed-grammar reasoning is in `DESIGN.md`; the session guidance, tooling and capability limits are in `PROMPTS.md`. Three constraints decide what is achievable, and CI enforces them on every PR rather than at a phase gate: the **250,000 B script budget** is a Lighthouse assertion, so a motion library is an architectural decision and not a convenience — default to CSS transitions plus the Web Animations API; `prefers-reduced-motion` must disable boot, zoom and parallax (brief §2.2), which motion built on the duration tokens inherits for free and hardcoded durations break; and every easing and duration belongs in `design/tokens/tokens.css`, regenerated by `node design/tokens/build.mjs`.
 
 **`lane/admin`** — CRUD · media upload with enforced alt text · relation editor · manual ingestion trigger · reaction moderation · Supabase Auth guard, single user
 Sub-branches: `feat/admin-auth`, `feat/admin-crud`, `feat/admin-media`, `feat/admin-relations`, `feat/admin-controls`
@@ -217,6 +225,7 @@ Ordered by when they block work.
 | Phase S3 end | Edit the normalized BTT record for accuracy                                  |
 | Pair 1       | Steam profile set to public, or Steam ingestion is dropped                   |
 | ~~Pair 1~~   | ~~Domain name and registrar~~ — **settled:** `kerwynjean.dev` (Porkbun). Canonical origin `https://kerwynjean.dev`; lands as `metadataBase` in `feat/recruiter-seo`. Vercel domain attach, DNS, auto-renew and 2FA remain the owner's to do. |
+| ~~Pair 1~~   | ~~Resume contact block: the values `feat/recruiter-resume-print` prints~~ — **settled 2026-08-29:** email `kerwynjean123@gmail.com`, LinkedIn `https://www.linkedin.com/in/kerwynjean/`, GitHub `https://github.com/kjean230`, location New York, NY. Those four only — no phone, no street address, no personal-site URL. They ship in public HTML and the email is scrapable; the owner was told and chose to include it. This row was missing until the post-gate close-out, so an agent reaching it would have halted on §2.1's *ambiguity* trigger rather than this table. |
 | Pair 3       | Full entry inventory: orgs, dates, roles, links, which projects attach where |
 | Pair 3       | Sports teams and interests for Hobbies                                       |
 

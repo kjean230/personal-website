@@ -21,6 +21,34 @@ These are functional arrangements — where things sit and how you move between 
 are the grammar of the genre, not the expression of any one product, and they are what
 makes keyboard and gamepad navigation feel native here.
 
+### Motion is borrowed the same way
+
+The shell's motion is drawn from two observed traditions: console launchers, and the
+hover-zoom / shape-morph idiom common to modern consumer product pages. What is taken
+from both is behaviour under interaction — that a focused tile grows slightly and its
+neighbours recede, that a card can expand into the detail view it opens rather than
+cutting to it, that scrolling settles instead of stopping dead, that selection is
+confirmed by movement rather than only by colour.
+
+That behaviour is a functional convention, and a widely shared one. It is separable from
+the things that *are* protected expression: a specific product's exact easing signature,
+its icon artwork, its colour pairing, its sound. The test applied throughout is whether a
+change could be described without naming a product. "The focused tile scales up and its
+neighbours dim" passes. "It looks like *that* console" does not, and is out of scope by
+brief §2.1 without exception.
+
+The distinction bites hardest on iconography. The icons in `design/assets/icons/` were
+drawn for this project on a 24 px grid with a 3 px stroke, and are already in use. Motion
+is what the shell is missing — **not** iconography, and no icon is redrawn against an
+observed reference. Where an interaction was observed elsewhere, what carries over is the
+one-sentence description of how it behaves, never a reproduction of how it looked.
+
+Two constraints keep this honest in practice rather than only on paper. Motion must be
+built on the duration tokens, which `prefers-reduced-motion` already zeroes, so reduced
+motion disables boot, zoom and parallax by construction instead of by remembering to.
+And the shell is an enhancement: every page works with JavaScript disabled before any of
+this applies.
+
 ## What is not taken
 
 No third-party console mark, logotype, typeface, character, box art, hardware rendering
