@@ -636,7 +636,7 @@ State at the time of writing (2026-08-30), so the agent verifies rather than ass
 
 Two traps span the lane, and **nothing local will reveal either one**:
 
-- **`readFileSync` plus the Edge runtime.** `app/(explorer)/tiles.ts` and the KJ badge read in `app/page.tsx` both use a literal `readFileSync(join(process.cwd(), …))`, and **`next/og` defaults to the Edge runtime, where `node:fs` does not exist.** An OG route that reaches for those assets needs either `export const runtime = "nodejs"` **plus** a new `outputFileTracingIncludes` entry in `next.config.ts` (the existing entries cover `/[section]` and `/[section]/[slug]` only), or the SVG source inlined into the route. **The failure is an ENOENT in the deploy and nowhere else** — `next start` and Lighthouse both run from the repo root, where the whole repo is on disk, so a clean local run proves nothing about it.
+- **`readFileSync` in a route that renders at request time.** `app/(explorer)/tiles.ts` and the KJ badge read in `app/page.tsx` both use a literal `readFileSync(join(process.cwd(), …))`. **The runtime is not the trap:** in Next 16 every route runs on Node.js by default, `opengraph-image` and `twitter-image` included — the installed docs' `02-route-segment-config/runtime.md` lists `'nodejs'` as the default and `'edge'` as deprecated — so `node:fs` is available without a `runtime` export, and no route should opt into `'edge'`. **The trap is *when* the read runs.** A generated OG image with no request-time API and no uncached data is prerendered at build, where the whole repo is on disk. One rendered per request, on demand for params not generated at build (everything under `/[section]/[slug]`, whose `generateStaticParams` returns `[]`), or on revalidation reads inside the deployed function, which holds only traced files. For that case, confirm the asset paths appear in the OG route's `.nft.json` under `.next/server/app/` after `npm run build`, and if they do not, add an `outputFileTracingIncludes` entry in `next.config.ts` keyed to the OG route's own path — the existing entries cover `/[section]` and `/[section]/[slug]`, and whether they reach an OG route nested under either is unverified — or inline the SVG source into the route. **The failure is an ENOENT in the deploy and nowhere else** — `next start` and Lighthouse both run from the repo root, where the whole repo is on disk, so a clean local run proves nothing about it; only fetching the OG URL from a deployment does.
 - **Lighthouse's SEO category is already 1.00 and will stay 1.00** with no sitemap, no OG image and no JSON-LD. The category audits the tags a page already has; it does not audit the ones it lacks. **`feat/recruiter-seo` therefore has no safety net** — every acceptance item on it is verified by hand or not at all.
 
 Also standing, from the gate: **Vercel Deployment Protection covers Production as well as previews, and Vercel SSO returns a 200 on every path**, `/nonexistent` included. Grep the response body for `<title>Login – Vercel</title>` before believing any status code from a Vercel host.
@@ -740,8 +740,9 @@ Read next: the Pair 1 section of this file (above this block) — its two traps
 are this sub-branch's, not background; then handoff/feat-recruiter-resume-print
 .md, handoff/feat-spine-routes.md (Deferred), lib/routes/table.ts (the URL
 contract), app/layout.tsx (the one metadata export today),
-app/(explorer)/tiles.ts (how an SVG is read at build) and next.config.ts (why
-outputFileTracingIncludes exists).
+app/(explorer)/tiles.ts (how an SVG is read: at module load — build for a
+prerendered route, cold start in the function for /[section]) and
+next.config.ts (why outputFileTracingIncludes exists).
 
 Task: Pair 1 — feat/recruiter-seo
 
@@ -772,16 +773,27 @@ metadataBase.
   escaped; do not hand-write the JSON, and add a sentence to CLAUDE.md naming
   the exception rather than leaving the rule looking violated.
 
-  THE TRAP THAT NOTHING LOCAL WILL REVEAL — read this twice. next/og defaults
-  to the Edge runtime, where node:fs does not exist, and both
-  app/(explorer)/tiles.ts and the badge read in app/page.tsx use a literal
-  readFileSync(join(process.cwd(), …)). An OG route that reaches for those
-  assets needs EITHER `export const runtime = "nodejs"` plus a new
-  outputFileTracingIncludes entry in next.config.ts for the OG route's own
-  path, OR the SVG source inlined into the route. The failure is an ENOENT in
-  the deploy and nowhere else: next start and Lighthouse both run from the repo
-  root, where the whole repo is on disk, so a clean local run is not evidence.
-  State in the handoff which of the two you chose and why.
+  THE TRAP THAT NOTHING LOCAL WILL REVEAL — read this twice. It is file
+  tracing, not the runtime. next/og routes run on Node.js by default in
+  Next 16 — the installed docs' 02-route-segment-config/runtime.md lists
+  'nodejs' as the default and 'edge' as deprecated — so node:fs works with no
+  runtime export; never add runtime = "edge". Both app/(explorer)/tiles.ts
+  and the badge read in app/page.tsx use a literal
+  readFileSync(join(process.cwd(), …)), and what matters is WHERE that read
+  runs. An OG route with no request-time API and no uncached data renders at
+  build, where the whole repo is on disk. One that renders per request, on
+  demand (anything under /[section]/[slug], whose generateStaticParams
+  returns []), or on revalidation reads inside the deployed function, which
+  holds only traced files. For that case, EITHER confirm the asset paths
+  appear in the OG route's .nft.json after npm run build and, if they do
+  not, add an outputFileTracingIncludes entry in next.config.ts keyed to the
+  OG route's own path (the existing /[section] and /[section]/[slug] entries
+  are not known to cover it), OR inline the SVG source into the route. The
+  failure is an ENOENT in the deploy and nowhere else: next start and
+  Lighthouse both run from the repo root, where the whole repo is on disk, so
+  a clean local run is not evidence; fetching the OG URL from a deployment
+  is. State in the handoff whether the OG route renders at build or at
+  request time and, if at request time, which of the two you chose and why.
 
   THE SECOND TRAP: Lighthouse's SEO category already scores 1.00 on all five
   audited URLs and will keep scoring 1.00 with no sitemap, no OG image and no
@@ -807,7 +819,7 @@ reopening settled decisions, inventing content of any kind. Security headers
 are Phase 3, not this sub-branch, even though they are adjacent to metadata.
 
 Verification: lint · typecheck · test · tokens:check · build (record every
-route's mode, and whether the OG route is ƒ or ●) · the four by-hand checks
+route's mode, and whether the OG route is ○, ● or ƒ) · the four by-hand checks
 above · Lighthouse a11y 1.0 and the script budget against the 250,000 B cap ·
 prohibited-term grep over the diff, by hand, including any new alt text —
 brief §2.1 covers metadata and alt text explicitly, and this sub-branch writes
