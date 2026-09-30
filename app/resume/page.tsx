@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { profilePageJsonLd } from "@/lib/render/json-ld";
 import { loadResume } from "@/lib/routes/load";
-import { entryHref } from "@/lib/routes/table";
+import { RESUME_HREF, entryHref } from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
 import { EntryDates } from "../entry-dates";
-import { Contact } from "./contact";
+import { JsonLd } from "../json-ld";
+import { CONTACT, Contact } from "./contact";
 import styles from "../site.module.css";
 
 // `/resume` — brief §2.2: plain HTML, reachable in one action from anywhere
@@ -25,8 +27,19 @@ import styles from "../site.module.css";
 // revalidate column). That makes NEXT_PUBLIC_SUPABASE_URL and
 // NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY build-time inputs, not just runtime
 // ones — CI's build and lighthouse jobs and Vercel already carry them.
+//
+// Structured data (feat/recruiter-seo): this is the profile page, so it is the
+// one page carrying a Person. `sameAs` takes the two profile URLs from CONTACT
+// rather than retyping them, so contact.tsx stays the only file holding the
+// values and /resume the only page rendering them; the email and location
+// stay out of the JSON-LD by the owner's choice.
 
-export const metadata: Metadata = { title: `Resume — ${SITE_NAME}` };
+export const metadata: Metadata = {
+  title: `Resume — ${SITE_NAME}`,
+  alternates: { canonical: RESUME_HREF },
+};
+
+const profile = profilePageJsonLd({ path: RESUME_HREF, sameAs: [CONTACT.linkedin, CONTACT.github] });
 
 export default async function ResumePage() {
   const { sections } = await loadResume();
@@ -73,6 +86,7 @@ export default async function ResumePage() {
           )}
         </section>
       ))}
+      <JsonLd data={profile} />
     </main>
   );
 }

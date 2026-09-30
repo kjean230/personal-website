@@ -6,7 +6,8 @@
  * (`listSection` per kind + `getFacetCounts` for the chips, `listTrophies`
  * for the trophy case), `loadEntry` for `/<section>/<slug>`
  * (`getEntryBySlug`), `loadResume` for `/resume` (three `listSection` calls,
- * `listTrophies` and `listLinks`). Loaders are framework-free: they return
+ * `listTrophies` and `listLinks`), `loadSitemap` for `/sitemap.xml` (one
+ * `listSection` per kind). Loaders are framework-free: they return
  * discriminated results and the page files map them to `notFound()` /
  * `permanentRedirect()`, so the loaders are unit-testable with fake queries
  * and the same functions serve both renderers.
@@ -27,7 +28,16 @@ import {
   type Trophy,
 } from "../content/queries";
 import type { EntrySummary, Facet, Link } from "../content/schema";
-import { FACET_ORDER, entryHref, sectionForKind, sectionHref, type Section } from "./table";
+import {
+  FACET_ORDER,
+  HOME_HREF,
+  RESUME_HREF,
+  SECTIONS,
+  entryHref,
+  sectionForKind,
+  sectionHref,
+  type Section,
+} from "./table";
 
 /** The queries a loader may call. Typed against the S4 module so a contract change fails `tsc` here. */
 export type RouteQueries = Pick<
@@ -183,6 +193,42 @@ export async function loadResume(queries: RouteQueries = defaultQueries): Promis
       entries: rows[index].map((entry) => ({ entry, links: byEntry.get(entry.id) ?? [] })),
     })),
   };
+}
+
+// Sitemap -------------------------------------------------------------------
+
+/** One `/sitemap.xml` row: a site-relative canonical path, and when it last changed if that is known. */
+export interface SitemapUrl {
+  readonly path: string;
+  /** The entry row's `updated_at`. Absent for the home, resume and section URLs, which have no such fact. */
+  readonly lastModified?: string;
+}
+
+/**
+ * Every canonical URL the site serves, derived from the route table and the
+ * query layer rather than listed: `/`, `/resume`, then each section followed
+ * by its entries in tile order. Adding a section stays one `SECTIONS` entry.
+ *
+ * What is left out is deliberate. `?facet=` views are subsets of their
+ * section and canonicalise to it; `/privacy` and `/admin` are reserved and
+ * have no page. `lastModified` is only written where the database records
+ * it — an entry's `updated_at`, which the row trigger stamps on real edits
+ * only (the content seed upserts `where … is distinct from`) — and no
+ * priority or change frequency is invented for anything.
+ * @returns the URLs in that order; a section with no entries still has its own URL.
+ */
+export async function loadSitemap(queries: RouteQueries = defaultQueries): Promise<SitemapUrl[]> {
+  const lists = await Promise.all(
+    SECTIONS.map((section) => Promise.all(section.kinds.map((kind) => queries.listSection(kind, {})))),
+  );
+  const urls: SitemapUrl[] = [{ path: HOME_HREF }, { path: RESUME_HREF }];
+  SECTIONS.forEach((section, index) => {
+    urls.push({ path: sectionHref(section) });
+    for (const entry of lists[index].flat().sort(compareRecency)) {
+      urls.push({ path: entryHref(entry), lastModified: entry.updated_at });
+    }
+  });
+  return urls;
 }
 
 // Entry ---------------------------------------------------------------------
