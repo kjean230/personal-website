@@ -6,10 +6,10 @@
  * allowed to produce unescaped output — lib/render/markdown.ts is the first,
  * and CLAUDE.md names both. The JSON is never hand-written: every document is
  * an object built here and serialised by `serializeJsonLd`, which replaces
- * every `<` with its JSON escape `<`. That one substitution is the whole
+ * every `<` with its JSON escape `\u003c`. That one substitution is the whole
  * boundary. Inside a script element the HTML parser only looks for `</script`
  * (and `<!--`), both of which start with `<`, so a title reading
- * `</script><script>…` cannot leave the element — and `<` is still `<`
+ * `</script><script>…` cannot leave the element — and `\u003c` is still `<`
  * to every JSON parser, so the data is unchanged.
  *
  * The builders state only what the repo records: the site's name and origin
@@ -39,7 +39,7 @@ const SCHEMA_ORG = "https://schema.org";
 
 /**
  * The script body for one JSON-LD document.
- * @returns `JSON.stringify(value)` with every `<` replaced by `<`.
+ * @returns `JSON.stringify(value)` with every `<` replaced by `\u003c`.
  */
 export function serializeJsonLd(value: JsonLd): string {
   return JSON.stringify(value).replace(/</g, "\\u003c");

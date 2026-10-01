@@ -90,7 +90,7 @@ Sitemap: https://kerwynjean.dev/sitemap.xml
 
 Every block comes from `lib/render/json-ld.ts` and is rendered only by `app/json-ld.tsx`.
 
-**Serialiser:** `serializeJsonLd` = `JSON.stringify(value).replace(/</g, "\\u003c")`. **Every** `<` becomes `<` (a global regex), so no `</script` or `<!--` can close the element, and the data is unchanged for any JSON parser. `CLAUDE.md` now names this as the one exception to `markdown.ts` being the only raw-output point, as Session B required.
+**Serialiser:** `serializeJsonLd` = `JSON.stringify(value).replace(/</g, "\\u003c")`. **Every** `<` becomes `\u003c` (a global regex), so no `</script` or `<!--` can close the element, and the data is unchanged for any JSON parser. `CLAUDE.md` now names this as the one exception to `markdown.ts` being the only raw-output point, as Session B required.
 
 **Schemas, and why each:**
 
@@ -241,6 +241,7 @@ The figures `feat-recruiter-resume-print.md` recorded (142,100 / 143,144) came f
 - **The plan expected byte-identical client chunks; they are not** (+1,356 B script per route). Attributed by bisect to the three metadata routes (Shipped, above).
 - **The first preview run of the check script crashed at its final step.** It derived the OG fetch path by stripping `kerwynjean.dev` from a branch-origin URL. The pages had already been fetched, and that run's results were discarded.
 - **CI on the branch.** The plan said "all 8 jobs on the branch, then on the PR", but `ci.yml` triggers only on pushes to `main` / `lane/**` and on PRs into them, so CI runs on the PR only.
+- **A comment-only correction followed the handoff commit.** Three comments in `lib/render/json-ld.ts`, and one line here, had the escape the serialiser writes (backslash, `u003c`) flattened to a bare `<` when the files were written, so they read "replace `<` with `<`". The code was never affected: line 45 is and was `.replace(/</g, "\\u003c")`, and the escape-counting tests passed throughout. The fix touches comments only; a rebuild confirmed the client chunks byte-identical to the verified `67f343d` build, and the suite was re-run.
 - **No subagents were used** (`PROMPTS.md` tooling posture). **The Gemini second-gaze checkpoint was not run:** it is the owner's manual loop and was not requested this session.
 
 ## Deferred
