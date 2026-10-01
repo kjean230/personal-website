@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { ContentQueryError, type EntryDetail, type FacetCounts, type Trophy } from "../content/queries";
-import { FACETS, type EntrySummary, type Facet, type Kind, type Link } from "../content/schema";
-import { loadEntry, loadResume, loadSection, loadTrophies, type RouteQueries } from "./load";
-import { sectionFromSegment } from "./table";
+import { FACETS, KINDS, type EntrySummary, type Facet, type Kind, type Link } from "../content/schema";
+import { loadEntry, loadResume, loadSection, loadSitemap, loadTrophies, type RouteQueries } from "./load";
+import { ADMIN_HREF, PRIVACY_HREF, SECTIONS, entryHref, sectionFromSegment, sectionHref } from "./table";
 
 // The loaders bind URLs to the S4 query contract. Every query here is a fake
 // (no network, no environment): the tests pin what a page receives for each
@@ -313,5 +313,110 @@ describe("loadResume", () => {
     const page = await loadResume(queriesWith([], []));
     expect(page.sections).toHaveLength(4);
     expect(page.sections[2]).toEqual({ id: "education", label: "Education", entries: [] });
+  });
+});
+
+describe("loadSitemap", () => {
+  // One fixture per shape that matters: a two-kind section (hobbies), an
+  // entry-less section (now), and a section whose list is not already in tile
+  // order when merged (hobbies again: the interest outranks the hobby).
+  const guardian = tile({ kind: "experience", slug: "guardian", updated_at: "2026-09-01T10:00:00+00:00" });
+  const btt = tile({ kind: "experience", slug: "break-through-tech", featured: true });
+  const project = tile({ kind: "project", slug: "sample-project", updated_at: "2026-08-30T12:34:56.789+00:00" });
+  const cert = tile({ kind: "certification", slug: "sample-credential" });
+  const degree = tile({ kind: "education", slug: "sample-degree" });
+  const hobby = tile({ kind: "hobby", slug: "sample-hobby" });
+  const team = tile({ kind: "interest", slug: "sample-team", sort_weight: 5 });
+  const byKind: Record<Kind, EntrySummary[]> = {
+    experience: [btt, guardian],
+    project: [project],
+    certification: [cert],
+    education: [degree],
+    hobby: [hobby],
+    interest: [team],
+    post: [],
+  };
+  const queries = (): RouteQueries => ({
+    listSection: vi.fn(async (kind: Kind) => byKind[kind]),
+    getFacetCounts: unused,
+    getEntryBySlug: unused,
+    listTrophies: unused,
+    listLinks: unused,
+  });
+
+  it("lists /, /resume, then every section followed by its entries in tile order", async () => {
+    const urls = await loadSitemap(queries());
+    expect(urls.map((url) => url.path)).toEqual([
+      "/",
+      "/resume",
+      "/experience",
+      "/experience/break-through-tech",
+      "/experience/guardian",
+      "/projects",
+      "/projects/sample-project",
+      "/certifications",
+      "/certifications/sample-credential",
+      "/education",
+      "/education/sample-degree",
+      "/hobbies",
+      "/hobbies/sample-team",
+      "/hobbies/sample-hobby",
+      "/now",
+    ]);
+  });
+
+  // S5's rule, restated for this URL: adding a section is one SECTIONS entry.
+  // Nothing in the sitemap is typed out, so every section and every entry's
+  // canonical URL must come from the route table.
+  it("is exactly the route table's sections and canonical entry URLs, with no duplicates", async () => {
+    const paths = (await loadSitemap(queries())).map((url) => url.path);
+    const entries = Object.values(byKind).flat().map((entry) => entryHref(entry));
+    expect(new Set(paths)).toEqual(new Set(["/", "/resume", ...SECTIONS.map((s) => sectionHref(s)), ...entries]));
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it("never lists a facet view or a reserved route", async () => {
+    const paths = (await loadSitemap(queries())).map((url) => url.path);
+    expect(paths.filter((path) => path.includes("?"))).toEqual([]);
+    expect(paths).not.toContain(PRIVACY_HREF);
+    expect(paths).not.toContain(ADMIN_HREF);
+  });
+
+  it("reads each kind once, through the route table, and nothing else", async () => {
+    const fake = queries();
+    await loadSitemap(fake);
+    expect(fake.listSection).toHaveBeenCalledTimes(KINDS.length);
+    expect(new Set(vi.mocked(fake.listSection).mock.calls.map(([kind]) => kind))).toEqual(new Set(KINDS));
+    for (const [, options] of vi.mocked(fake.listSection).mock.calls) expect(options).toEqual({});
+  });
+
+  // lastModified is only written where the database records it: an entry's
+  // updated_at, verbatim. The home, resume and section URLs have no such fact
+  // and get none, rather than an invented one.
+  it("dates entries by their updated_at and nothing else", async () => {
+    const urls = await loadSitemap(queries());
+    const dated = Object.fromEntries(urls.map((url) => [url.path, url.lastModified]));
+    expect(dated["/experience/guardian"]).toBe("2026-09-01T10:00:00+00:00");
+    expect(dated["/projects/sample-project"]).toBe("2026-08-30T12:34:56.789+00:00");
+    for (const path of ["/", "/resume", ...SECTIONS.map((s) => sectionHref(s))]) {
+      expect(urls.find((url) => url.path === path)).toEqual({ path });
+    }
+  });
+
+  it("lets a query error through untouched", async () => {
+    const failure = new ContentQueryError("listSection(project)", {
+      message: "boom",
+      code: "500",
+      details: "",
+      hint: "",
+    });
+    const fake: RouteQueries = {
+      ...queries(),
+      listSection: async (kind: Kind) => {
+        if (kind === "project") throw failure;
+        return byKind[kind];
+      },
+    };
+    await expect(loadSitemap(fake)).rejects.toBe(failure);
   });
 });
