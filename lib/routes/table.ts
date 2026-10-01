@@ -23,6 +23,12 @@
  *                        listLinks()                            dynamic input, so it prerenders
  * /privacy               —                                      reserved: brief §2.3, Phase 3 hardening
  * /admin                 —                                      reserved: lane/admin (Supabase Auth)
+ * /sitemap.xml           listSection(kind) per kind of every    app/sitemap.ts: /, /resume, every section
+ *                        section                                and every entry's canonical URL — never a
+ *                                                               ?facet= view, never a reserved route
+ * /robots.txt            —                                      app/robots.ts: allow all, name the sitemap
+ * /opengraph-image       —                                      app/opengraph-image.tsx: the one site-wide
+ *                                                               share image, rendered at build
  *
  * Sections (brief §4.3 order): /experience · /projects · /certifications ·
  * /education · /hobbies (kinds hobby + interest — one tile) · /now (kind
@@ -45,6 +51,8 @@ export const RESUME_HREF = "/resume";
 export const PRIVACY_HREF = "/privacy";
 /** Brief §7. Reserved for lane/admin. Never linked from the public site. */
 export const ADMIN_HREF = "/admin";
+/** app/sitemap.ts; robots.txt names it. */
+export const SITEMAP_HREF = "/sitemap.xml";
 
 // Sections ------------------------------------------------------------------
 

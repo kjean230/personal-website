@@ -3,12 +3,14 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { Fragment, cache } from "react";
 import { TAG_CATEGORIES, type Entry, type Tag, type TagCategory } from "@/lib/content/schema";
+import { breadcrumbJsonLd } from "@/lib/render/json-ld";
 import { renderMarkdown } from "@/lib/render/markdown";
 import { loadEntry, type RelatedLink } from "@/lib/routes/load";
-import { sectionFromSegment, sectionHref } from "@/lib/routes/table";
+import { HOME_HREF, sectionFromSegment, sectionHref } from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
 import { KeyHints } from "../../(explorer)/key-hints";
 import { EntryDates } from "../../entry-dates";
+import { JsonLd } from "../../json-ld";
 import styles from "../../site.module.css";
 
 // `/<section>/<slug>` — the canonical URL of one entry (brief §2.2:
@@ -27,6 +29,10 @@ import styles from "../../site.module.css";
 // here), the typed metadata as a <dl>, the external links and the tags. Media
 // is deliberately absent — no Storage bucket exists yet, so there is no public
 // URL to build (PROMPTS.md S6 decision 3); it lands with feat/admin-media.
+//
+// Canonical (feat/recruiter-seo): the loader's own `href` — the URL a
+// wrong-section request 308s to — and only when the entry was found, so a 404
+// never names one.
 
 export function generateStaticParams(): { section: string; slug: string }[] {
   return [];
@@ -41,11 +47,11 @@ const resolve = cache(async (segment: string, slug: string) => {
 export async function generateMetadata({ params }: PageProps<"/[section]/[slug]">): Promise<Metadata> {
   const { section, slug } = await params;
   const resolved = await resolve(section, slug);
+  if (resolved?.result.kind !== "found") return { title: "Not found" };
+  const { detail, href } = resolved.result;
   return {
-    title:
-      resolved?.result.kind === "found"
-        ? `${resolved.result.detail.entry.title} — ${SITE_NAME}`
-        : "Not found",
+    title: `${detail.entry.title} — ${SITE_NAME}`,
+    alternates: { canonical: href },
   };
 }
 
@@ -191,6 +197,13 @@ export default async function EntryPage({ params }: PageProps<"/[section]/[slug]
       {/* Escape = B = Back: up one level, to this entry's section — the same
           destination the crumb link points at. */}
       <KeyHints backHref={sectionHref(section)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: SITE_NAME, path: HOME_HREF },
+          { name: section.label, path: sectionHref(section) },
+          { name: entry.title, path: result.href },
+        ])}
+      />
     </main>
   );
 }

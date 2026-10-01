@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { RESUME_HREF } from "@/lib/routes/table";
+import { websiteJsonLd } from "@/lib/render/json-ld";
+import { HOME_HREF, RESUME_HREF } from "@/lib/routes/table";
+import { JsonLd } from "./json-ld";
 import { KeyHints } from "./(explorer)/key-hints";
 import { SectionTiles } from "./(explorer)/section-tiles";
 import { TileRow } from "./(explorer)/tile-row";
@@ -25,6 +28,9 @@ const badge = readFileSync(
   join(process.cwd(), "design/assets/mark/kj-badge.svg"),
   "utf8",
 );
+
+// The title and description are the layout's; this page adds its canonical.
+export const metadata: Metadata = { alternates: { canonical: HOME_HREF } };
 
 export default function Home() {
   return (
@@ -52,6 +58,7 @@ export default function Home() {
         </p>
       </nav>
       <KeyHints />
+      <JsonLd data={websiteJsonLd()} />
     </main>
   );
 }

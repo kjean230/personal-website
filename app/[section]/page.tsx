@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { breadcrumbJsonLd } from "@/lib/render/json-ld";
 import { loadSection } from "@/lib/routes/load";
-import { HOME_HREF, entryHref, parseFacetParam, sectionFromSegment } from "@/lib/routes/table";
+import {
+  HOME_HREF,
+  entryHref,
+  parseFacetParam,
+  sectionFromSegment,
+  sectionHref,
+} from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
 import { KeyHints } from "../(explorer)/key-hints";
 import { TrophyState } from "../(explorer)/trophy";
 import { EntryDates } from "../entry-dates";
+import { JsonLd } from "../json-ld";
 import styles from "../site.module.css";
 
 // `/<section>` — one page file for every brief §4.3 section, resolved through
@@ -25,10 +33,18 @@ import styles from "../site.module.css";
 // (`(explorer)/trophy.tsx`). Nothing else about the row moves — same `<li>`,
 // same `data-status`, same href — because the recruiter index and the trophy
 // case are deliberately one markup, not two renderings to keep in sync.
+//
+// Canonical (feat/recruiter-seo): always the bare section URL. A `?facet=`
+// view is a subset of the section's own list, not a page of its own, so every
+// chip canonicalises to `/<section>` and none appears in the sitemap. A facet
+// the page will 404 on gets no canonical at all.
 
-export async function generateMetadata({ params }: PageProps<"/[section]">): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps<"/[section]">): Promise<Metadata> {
   const section = sectionFromSegment((await params).section);
-  return { title: section ? `${section.label} — ${SITE_NAME}` : "Not found" };
+  if (!section) return { title: "Not found" };
+  const title = `${section.label} — ${SITE_NAME}`;
+  if (!parseFacetParam((await searchParams).facet).ok) return { title };
+  return { title, alternates: { canonical: sectionHref(section) } };
 }
 
 function statusText(status: string): string {
@@ -94,6 +110,12 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
       {/* Escape = B = Back: up one level, to the tile row. KeyHints mounts the
           binding with its own visible cue. */}
       <KeyHints backHref={HOME_HREF} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: SITE_NAME, path: HOME_HREF },
+          { name: section.label, path: sectionHref(section) },
+        ])}
+      />
     </main>
   );
 }
