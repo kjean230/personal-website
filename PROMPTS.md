@@ -843,13 +843,13 @@ reported, never absorbed.
 Blockers: ask. Do not invent content, names, dates, or assets.
 ```
 
-**`lane/ingestion`, Pair 1's other half, has no block here on purpose.** It is still blocked on plan §8's Steam profile visibility, and on plan §9's verify-at-build-time items — Vercel Hobby non-commercial terms, Supabase free-tier pause behaviour, and current Spotify / Steam / IGDB API access terms including IGDB cover-art usage rights before any box art is displayed. Writing its block before those are settled would be inventing the answers.
+**`lane/ingestion`, Pair 1's other half, has no block here on purpose.** It is blocked on the owner items in plan §8 — the rows marked `feat/ingest-spotify` and `feat/ingest-steam`. Read them there: that table is the current list, and this paragraph does not restate it. Plan §9's verify-at-build-time items are settled. Writing its block before the §8 rows are settled would be inventing the answers.
 
 ---
 
 ## Pair 2 — motion notes (`lane/console-shell`)
 
-Not a session prompt; scoping notes recorded ahead of the lane by `chore/post-gate-closeout`, because they existed only in conversation and would otherwise have been lost. Pair 2 runs **after Pair 1 merges** (plan §5 — Play Activity depends on ingested data existing). The motion → sub-branch mapping is in `BUILD_PLAN.md` §5; the borrowed-grammar reasoning is in `DESIGN.md`; the annotated sources are in the git-ignored `REFERENCES.md`, whose absence in a fresh clone is normal and is not a blocker.
+Not a session prompt; scoping notes recorded ahead of the lane by `chore/post-gate-closeout`, because they existed only in conversation and would otherwise have been lost. `lane/console-shell` no longer waits for Pair 1: it starts once the LCP diagnostic's handoff is on `main` (plan §5.1, §5.2), and only `feat/shell-play-activity` waits on ingested data. The motion → sub-branch mapping is in `BUILD_PLAN.md` §5; the borrowed-grammar reasoning is in `DESIGN.md`; the annotated sources are in the git-ignored `REFERENCES.md`, whose absence in a fresh clone is normal and is not a blocker.
 
 The owner wants: hover/focus zoom on tiles, image zoom, shape morphing, click-through transitions, console-style icon presentation and navigation, and smooth scrolling.
 
