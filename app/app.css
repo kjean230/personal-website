@@ -36,6 +36,24 @@ samp {
   outline-offset: var(--focus-ring-offset);
 }
 
+/* Smooth scrolling (feat/shell-tile-grid), Explorer mode only: when a script
+ * or a fragment link scrolls the page — the arrows bringing an index tile into
+ * view, the skip link — it glides there instead of jumping. It lives here and
+ * not in the shell's stylesheet because the scroller is the document itself,
+ * and a CSS module cannot style <html>.
+ *
+ * `scroll-behavior` has no duration to take from a token; the browser owns the
+ * curve. What the tokens cannot do for it, this query does: under
+ * prefers-reduced-motion the rule does not apply and every scroll is instant.
+ * Route changes are never smooth — <html> carries data-scroll-behavior, which
+ * tells Next to scroll to the top of a new page at once.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-mode="explorer"] {
+    scroll-behavior: smooth;
+  }
+}
+
 /* Print. A print stylesheet inherits prefers-color-scheme, so a visitor whose
  * system is dark prints the ink theme: --color-text is #F2ECDD, near-white, onto
  * a sheet whose --color-surface the printer omits by default. The page comes out

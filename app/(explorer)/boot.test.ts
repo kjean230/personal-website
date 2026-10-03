@@ -8,6 +8,7 @@ import {
   MODE_KEY,
   MODE_SCRIPT,
   claimBoot,
+  isExplorer,
   parseMode,
   recordMode,
   type BootStorage,
@@ -74,6 +75,36 @@ describe("parseMode", () => {
   it("treats everything else as no mode", () => {
     for (const value of ["", "Explorer", "admin", " recruiter", null, undefined, 1, {}]) {
       expect(parseMode(value), String(value)).toBeNull();
+    }
+  });
+});
+
+// feat/shell-tile-grid: the one place script reads the mode back. It decides
+// whether the index grid takes the arrow keys, so every path that never chose
+// Explorer has to read as Recruiter here, as it does in the stylesheets.
+describe("isExplorer", () => {
+  const root = (mode?: string) => ({ dataset: (mode === undefined ? {} : { mode }) as DOMStringMap });
+
+  it("is true for data-mode=\"explorer\" and for nothing else in MODES", () => {
+    expect(isExplorer(root("explorer"))).toBe(true);
+    expect(isExplorer(root("recruiter"))).toBe(false);
+  });
+
+  it("is false with no attribute — JavaScript off, a deep link, a session that never chose", () => {
+    expect(isExplorer(root())).toBe(false);
+  });
+
+  it("is false for a value outside MODES", () => {
+    for (const value of ["", "Explorer", "EXPLORER", " explorer", "explorer ", "console", "true"]) {
+      expect(isExplorer(root(value)), JSON.stringify(value)).toBe(false);
+    }
+  });
+
+  it("agrees with recordMode", () => {
+    for (const mode of MODES) {
+      const element = { dataset: {} as DOMStringMap };
+      recordMode(mode, session().storage, element);
+      expect(isExplorer(element)).toBe(mode === "explorer");
     }
   });
 });

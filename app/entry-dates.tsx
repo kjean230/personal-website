@@ -1,4 +1,6 @@
-import { entryDateRange, type DatedEntry } from "@/lib/render/dates";
+// Relative, not the `@/` alias: (explorer)/all-software.tsx renders this and has
+// a test beside it, and Vitest resolves no tsconfig paths.
+import { entryDateRange, type DatedEntry } from "../lib/render/dates";
 import styles from "./site.module.css";
 
 // The one place a date range becomes markup — the section index, the entry

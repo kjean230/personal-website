@@ -5,6 +5,7 @@ import Link from "next/link";
 import { websiteJsonLd } from "@/lib/render/json-ld";
 import { HOME_HREF, RESUME_HREF } from "@/lib/routes/table";
 import { JsonLd } from "./json-ld";
+import { AllSoftwareLink } from "./(explorer)/all-software";
 import { KeyHints } from "./(explorer)/key-hints";
 import { ProfileSelect } from "./(explorer)/profile-select";
 import { SectionTiles } from "./(explorer)/section-tiles";
@@ -58,6 +59,12 @@ export default function Home() {
               Resume
             </Link>
           </p>
+          {/* The way into the "All Software" index (brief §5). Explorer mode
+              only: the stylesheet hides it unless <html> carries
+              data-mode="explorer", so this page looks as it did to anyone who
+              has not chosen that profile. Like Resume it sits beside the row,
+              not in it — the row is the six sections. */}
+          <AllSoftwareLink />
         </nav>
         <KeyHints />
         <JsonLd data={websiteJsonLd()} />

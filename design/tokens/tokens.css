@@ -85,6 +85,12 @@
   --duration-base: 260ms;
   --duration-slow: 320ms;
   --duration-boot: 1200ms;
+  /* Zoom: how far a hovered or focused tile grows, and how far the tiles beside
+     it recede. These are factors, not durations, so the reduced-motion block
+     below cannot collapse them — whatever applies one does so inside
+     `prefers-reduced-motion: no-preference`. */
+  --scale-zoom: 1.06;
+  --scale-recede: 0.97;
 
   /* ---- focus, borders, elevation ------------------------------------------
      Elevation is a hard offset with no blur — a stamp, not a glow. */

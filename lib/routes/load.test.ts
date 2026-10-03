@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { ContentQueryError, type EntryDetail, type FacetCounts, type Trophy } from "../content/queries";
 import { FACETS, KINDS, type EntrySummary, type Facet, type Kind, type Link } from "../content/schema";
-import { loadEntry, loadResume, loadSection, loadSitemap, loadTrophies, type RouteQueries } from "./load";
-import { ADMIN_HREF, PRIVACY_HREF, SECTIONS, entryHref, sectionFromSegment, sectionHref } from "./table";
+import { loadAll, loadEntry, loadResume, loadSection, loadSitemap, loadTrophies, type RouteQueries } from "./load";
+import { ADMIN_HREF, ALL_HREF, PRIVACY_HREF, SECTIONS, entryHref, sectionFromSegment, sectionHref } from "./table";
 
 // The loaders bind URLs to the S4 query contract. Every query here is a fake
 // (no network, no environment): the tests pin what a page receives for each
@@ -237,6 +237,170 @@ describe("loadEntry", () => {
   });
 });
 
+// `/all` — brief §5's "full searchable index of every entry"
+// (feat/shell-tile-grid). The search contract is the owner's: title, subtitle
+// and summary; case-insensitive; every word must appear; nothing is ranked.
+describe("loadAll", () => {
+  const btt = tile({
+    kind: "experience",
+    slug: "break-through-tech",
+    title: "AI Fellow",
+    subtitle: "Break Through Tech",
+    summary: "A year of machine learning coursework and an industry project.",
+    featured: true,
+  });
+  const guardian = tile({
+    kind: "experience",
+    slug: "guardian",
+    title: "Data Engineering Intern",
+    subtitle: "Guardian",
+    start_date: "2025-06-01",
+  });
+  const classifier = tile({
+    kind: "project",
+    slug: "superhost-classifier",
+    title: "Superhost classifier",
+    summary: "Predicts host status from listing data.",
+    start_date: "2024-09-01",
+  });
+  const cert = tile({
+    kind: "certification",
+    slug: "ml-foundations",
+    title: "Machine Learning Foundations",
+    subtitle: "eCornell",
+    start_date: "2024-08-01",
+  });
+  const degree = tile({ kind: "education", slug: "degree", title: "B.S. Computer Science", sort_weight: 5 });
+  const team = tile({ kind: "interest", slug: "team", title: "A followed team" });
+  const byKind: Record<Kind, EntrySummary[]> = {
+    experience: [btt, guardian],
+    project: [classifier],
+    certification: [cert],
+    education: [degree],
+    hobby: [],
+    interest: [team],
+    post: [],
+  };
+  const queries = (): RouteQueries => ({
+    listSection: vi.fn(async (kind: Kind) => byKind[kind]),
+    getFacetCounts: unused,
+    getEntryBySlug: unused,
+    listTrophies: unused,
+    listLinks: unused,
+  });
+  const slugs = async (query: string) => (await loadAll(query, queries())).entries.map((entry) => entry.slug);
+
+  it("lists every entry of every kind once, in tile order across kinds", async () => {
+    const page = await loadAll("", queries());
+    // featured, then owner weight, then most recent start, then title — the
+    // order a section uses, applied to the whole site.
+    expect(page.entries.map((entry) => entry.slug)).toEqual([
+      "break-through-tech",
+      "degree",
+      "guardian",
+      "superhost-classifier",
+      "ml-foundations",
+      "team",
+    ]);
+    expect(page.total).toBe(6);
+    expect(page.query).toBe("");
+    expect(new Set(page.entries.map((entry) => entry.id + entry.slug)).size).toBe(page.entries.length);
+  });
+
+  it("reads each kind once, through the route table, and nothing else", async () => {
+    const fake = queries();
+    await loadAll("guardian", fake);
+    expect(fake.listSection).toHaveBeenCalledTimes(KINDS.length);
+    expect(new Set(vi.mocked(fake.listSection).mock.calls.map(([kind]) => kind))).toEqual(new Set(KINDS));
+    // The search never reaches the query layer: every call is the plain list.
+    for (const [, options] of vi.mocked(fake.listSection).mock.calls) expect(options).toEqual({});
+  });
+
+  it("gives every result a real URL from the route table", async () => {
+    const page = await loadAll("", queries());
+    expect(page.entries.map((entry) => entryHref(entry))).toEqual([
+      "/experience/break-through-tech",
+      "/education/degree",
+      "/experience/guardian",
+      "/projects/superhost-classifier",
+      "/certifications/ml-foundations",
+      "/hobbies/team",
+    ]);
+  });
+
+  it("matches the title, the subtitle and the summary", async () => {
+    expect(await slugs("fellow")).toEqual(["break-through-tech"]);
+    expect(await slugs("ecornell")).toEqual(["ml-foundations"]);
+    expect(await slugs("listing")).toEqual(["superhost-classifier"]);
+  });
+
+  it("ignores case, in the search and in the entry", async () => {
+    expect(await slugs("GUARDIAN")).toEqual(["guardian"]);
+    expect(await slugs("break through TECH")).toEqual(["break-through-tech"]);
+  });
+
+  it("requires every word, wherever each one appears", async () => {
+    // "machine" is in two entries; "foundations" in one of them.
+    expect(await slugs("machine")).toEqual(["break-through-tech", "ml-foundations"]);
+    expect(await slugs("machine foundations")).toEqual(["ml-foundations"]);
+    // One word from the title, one from the summary.
+    expect(await slugs("fellow industry")).toEqual(["break-through-tech"]);
+    expect(await slugs("machine guardian")).toEqual([]);
+  });
+
+  it("matches part of a word", async () => {
+    expect(await slugs("class")).toEqual(["superhost-classifier"]);
+  });
+
+  // Not the slug, the kind, the section name or the facet: none of them is
+  // one of the three fields, and a row matching on text it does not show
+  // would be a match the visitor cannot see.
+  it("matches nothing outside those three fields", async () => {
+    expect(await slugs("superhost-classifier")).toEqual([]);
+    expect(await slugs("certification")).toEqual([]);
+    expect(await slugs("hobbies")).toEqual([]);
+  });
+
+  it("keeps a match in its place rather than ranking it", async () => {
+    // "e" is in all six; the order is the unsearched order.
+    expect(await slugs("e")).toEqual(await slugs(""));
+  });
+
+  it("returns no rows, and still the total, when nothing matches", async () => {
+    const page = await loadAll("zzz", queries());
+    expect(page.entries).toEqual([]);
+    expect(page.total).toBe(6);
+    expect(page.query).toBe("zzz");
+  });
+
+  it("treats characters with a meaning elsewhere as plain text", async () => {
+    for (const query of ["%", "_", ".*", "(", "a,b", "\\"]) expect(await slugs(query), query).toEqual([]);
+    expect(await slugs("b.s.")).toEqual(["degree"]);
+  });
+
+  it("is empty, not an error, when the site has no entries", async () => {
+    const empty: RouteQueries = { ...queries(), listSection: async () => [] };
+    expect(await loadAll("", empty)).toEqual({ query: "", total: 0, entries: [] });
+  });
+
+  it("lets a query error through untouched", async () => {
+    const failure = new ContentQueryError("listSection(project)", {
+      message: "boom",
+      code: "500",
+      details: "",
+      hint: "",
+    });
+    const fake: RouteQueries = {
+      ...queries(),
+      listSection: async (kind: Kind) => {
+        if (kind === "project") throw failure;
+        return byKind[kind];
+      },
+    };
+    await expect(loadAll("", fake)).rejects.toBe(failure);
+  });
+});
+
 describe("loadResume", () => {
   // `tile()` gives every fake row the same id and the resume groups links by
   // `entry_id`, so distinct ids are what make the grouping assertions mean
@@ -344,11 +508,12 @@ describe("loadSitemap", () => {
     listLinks: unused,
   });
 
-  it("lists /, /resume, then every section followed by its entries in tile order", async () => {
+  it("lists /, /resume, /all, then every section followed by its entries in tile order", async () => {
     const urls = await loadSitemap(queries());
     expect(urls.map((url) => url.path)).toEqual([
       "/",
       "/resume",
+      "/all",
       "/experience",
       "/experience/break-through-tech",
       "/experience/guardian",
@@ -371,11 +536,13 @@ describe("loadSitemap", () => {
   it("is exactly the route table's sections and canonical entry URLs, with no duplicates", async () => {
     const paths = (await loadSitemap(queries())).map((url) => url.path);
     const entries = Object.values(byKind).flat().map((entry) => entryHref(entry));
-    expect(new Set(paths)).toEqual(new Set(["/", "/resume", ...SECTIONS.map((s) => sectionHref(s)), ...entries]));
+    expect(new Set(paths)).toEqual(
+      new Set(["/", "/resume", ALL_HREF, ...SECTIONS.map((s) => sectionHref(s)), ...entries]),
+    );
     expect(new Set(paths).size).toBe(paths.length);
   });
 
-  it("never lists a facet view or a reserved route", async () => {
+  it("never lists a facet view, a search or a reserved route", async () => {
     const paths = (await loadSitemap(queries())).map((url) => url.path);
     expect(paths.filter((path) => path.includes("?"))).toEqual([]);
     expect(paths).not.toContain(PRIVACY_HREF);
@@ -391,14 +558,14 @@ describe("loadSitemap", () => {
   });
 
   // lastModified is only written where the database records it: an entry's
-  // updated_at, verbatim. The home, resume and section URLs have no such fact
-  // and get none, rather than an invented one.
+  // updated_at, verbatim. The home, resume, index and section URLs have no
+  // such fact and get none, rather than an invented one.
   it("dates entries by their updated_at and nothing else", async () => {
     const urls = await loadSitemap(queries());
     const dated = Object.fromEntries(urls.map((url) => [url.path, url.lastModified]));
     expect(dated["/experience/guardian"]).toBe("2026-09-01T10:00:00+00:00");
     expect(dated["/projects/sample-project"]).toBe("2026-08-30T12:34:56.789+00:00");
-    for (const path of ["/", "/resume", ...SECTIONS.map((s) => sectionHref(s))]) {
+    for (const path of ["/", "/resume", ALL_HREF, ...SECTIONS.map((s) => sectionHref(s))]) {
       expect(urls.find((url) => url.path === path)).toEqual({ path });
     }
   });
