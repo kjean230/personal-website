@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { HOME_HREF, RESUME_HREF } from "@/lib/routes/table";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { MODE_SCRIPT } from "./(explorer)/boot";
 import "../design/tokens/tokens.css";
 import "./app.css";
 import styles from "./site.module.css";
@@ -47,9 +48,23 @@ export const metadata: Metadata = {
 // The skip link ahead of it is brief §2.2's "no traps": every page's content
 // is one Tab and one Enter away, which matters more once S7 puts a tile row
 // between the header and the content.
+//
+// The script in <head> re-applies the session's profile (brief §5) to <html>
+// as `data-mode`, on every page, before first paint — the profile is chosen on
+// `/` but belongs to the whole session. It is a constant built in
+// (explorer)/boot.ts from its own literals: no request data, no content.
+// `suppressHydrationWarning` is for that one attribute, which the server
+// cannot know; it reaches no further than <html> itself.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: MODE_SCRIPT }} />
+      </head>
       <body>
         <a href="#main" className={styles.skipLink}>
           Skip to content
