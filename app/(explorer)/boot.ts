@@ -15,9 +15,10 @@
  *  - **This session only.** Both facts live in `sessionStorage`: one browser
  *    tab, gone when it closes. No cookie, nothing in the URL, nothing a server
  *    ever sees — which is also what keeps `/` a static route.
- *  - **Recorded, not rendered.** A choice is stored and exposed as `data-mode`
- *    on `<html>`. Nothing reads it yet; the rows that build Explorer-only
- *    furniture key on it. Both profiles land on the page as it renders today.
+ *  - **Recorded here, rendered elsewhere.** A choice is stored and exposed as
+ *    `data-mode` on `<html>`, and that is all this file does with it. The rows
+ *    that build Explorer-only furniture key on the attribute, starting with
+ *    feat/shell-tile-grid.
  *
  * Recruiter is the default (brief §1), so it is what every path that never
  * chooses gets: JavaScript off, a crawler, a deep link, storage blocked, and
@@ -45,6 +46,16 @@ export const PROFILE_TITLE_ID = "profile-select-title";
  */
 export function parseMode(value: unknown): Mode | null {
   return MODES.find((mode) => mode === value) ?? null;
+}
+
+/**
+ * Whether the page is in Explorer mode: the one reading of `data-mode` that
+ * script makes (feat/shell-tile-grid); the stylesheets read the same attribute.
+ * No attribute, or a value outside `MODES`, is Recruiter.
+ * @returns true only when the root element carries `data-mode="explorer"`.
+ */
+export function isExplorer(root: { dataset: DOMStringMap }): boolean {
+  return parseMode(root.dataset.mode) === "explorer";
 }
 
 /** The part of `Storage` the boot uses. */

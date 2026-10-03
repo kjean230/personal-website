@@ -55,11 +55,17 @@ export const metadata: Metadata = {
 // (explorer)/boot.ts from its own literals: no request data, no content.
 // `suppressHydrationWarning` is for that one attribute, which the server
 // cannot know; it reaches no further than <html> itself.
+//
+// `data-scroll-behavior` is Next's own attribute (16: "Scroll Behavior Override").
+// app.css gives Explorer mode `scroll-behavior: smooth`; with this attribute
+// Next sets it aside for the length of a route change, so a new page opens at
+// its top instead of gliding up from wherever the last one was scrolled to.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable}`}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>

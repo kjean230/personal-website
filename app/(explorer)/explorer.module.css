@@ -13,8 +13,11 @@
  * rule; this file is not, so the same shapes are composed from --size-* and
  * --space-*.
  *
- * prefers-reduced-motion needs no media query here: tokens.css already zeroes
- * every --duration-* globally, so the transition below collapses to 0ms.
+ * prefers-reduced-motion needs no media query for a transition: tokens.css
+ * already zeroes every --duration-* globally, so each one collapses to 0ms. The
+ * one query in this file is around the zoom at the end of it, because a scale
+ * is a size, not a duration, and zeroing the duration would still leave the
+ * tile bigger.
  */
 
 /* auto-fit + minmax is the whole responsive story: the row is horizontal while
@@ -317,4 +320,288 @@
   border: var(--border-hairline);
   border-radius: var(--radius-xs);
   font-size: var(--text-xs);
+}
+
+/* The "All Software" index (feat/shell-tile-grid, brief §5) — its search form.
+ * A GET form in both modes; nothing here depends on the mode or on script.
+ * The submit button and "Show all" reuse site.module.css's chip.
+ */
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.searchLabel {
+  font-weight: var(--weight-semibold);
+}
+
+/* Fields do not inherit the page's typeface. 3 × --space-16 is the basis the
+ * home row uses for a tile; min-width lets it shrink below that on a phone.
+ */
+.searchInput {
+  flex: 1 1 calc(var(--space-16) * 3);
+  min-width: 0;
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-3);
+  border: var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font: inherit;
+}
+
+/* The link to the index from the home page, and each index row's drawing:
+ * Explorer furniture, so neither renders until the rules below say so. With no
+ * mode — JavaScript off, a deep link, a session that never chose — the home
+ * page has no such link and the index is the plain list site.module.css draws.
+ */
+.rail,
+.gridIcon {
+  display: none;
+}
+
+.railLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-touch-min);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+/* A circular button, where Phase 0's specimen drew this glyph: --radius-circle
+ * "exists for facet chips and the utility rail" (tokens.css).
+ */
+.railIcon {
+  display: grid;
+  place-items: center;
+  width: var(--size-touch-min);
+  height: var(--size-touch-min);
+  border: var(--border-strong);
+  border-radius: var(--radius-circle);
+  background: var(--color-surface-raised);
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-glide);
+}
+
+.railIcon svg,
+.gridIcon svg {
+  display: block;
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+
+.railLink:hover .railIcon,
+.railLink:focus-visible .railIcon {
+  border: var(--border-accent);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ==========================================================================
+ * Explorer mode (feat/shell-tile-grid). Every rule from here down is keyed on
+ * `data-mode="explorer"` on <html> — the attribute feat/shell-boot-profile
+ * records and the script in <head> re-applies before first paint. It is the
+ * only mode state there is; nothing here has a second source. No attribute, or
+ * any other value, matches none of these, and the page is the recruiter render.
+ *
+ * `ul.tiles`, not `.tiles`: the profile select lays its two choices out with
+ * the same class on a <form>, and they are not the tile row.
+ * ========================================================================== */
+
+:global(html[data-mode="explorer"]) .rail {
+  display: block;
+  margin: var(--space-6) 0 0;
+}
+
+/* The icon-display grammar, as Phase 0's specimen draws it (the `.strip` in
+ * design/tokens/build.mjs): the drawing sits on a square face and the label
+ * stands under it, outside the face. The link stops being the face — it keeps
+ * its 2px border, transparent, so nothing shifts — and the row closes up from a
+ * stretched grid into tiles standing side by side.
+ */
+:global(html[data-mode="explorer"]) ul.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-4);
+  /* Shrink-wrapped, so "the pointer is in the row" below means over the tiles
+     and the gaps between them, not the empty margin either side. */
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+:global(html[data-mode="explorer"]) ul.tiles .tile {
+  /* 9.5rem: room for the longest label to wrap under a 7rem face. */
+  width: calc(var(--space-16) * 2 + var(--space-6));
+}
+
+:global(html[data-mode="explorer"]) ul.tiles .tileLink,
+:global(html[data-mode="explorer"]) ul.tiles .tileLink:hover,
+:global(html[data-mode="explorer"]) ul.tiles .tileLink:focus-visible {
+  justify-content: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+  /* The label is on the page now, not on the fill. */
+  color: var(--color-text);
+  transition-property: color, transform;
+}
+
+:global(html[data-mode="explorer"]) ul.tiles .tileIcon,
+:global(html[data-mode="explorer"]) .gridIcon {
+  display: grid;
+  place-items: center;
+  border: var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  box-shadow: var(--elevation-1);
+  transition-property: background-color, border-color, box-shadow, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-glide);
+}
+
+:global(html[data-mode="explorer"]) ul.tiles .tileIcon {
+  width: calc(var(--space-16) + var(--space-12));
+  height: calc(var(--space-16) + var(--space-12));
+}
+
+:global(html[data-mode="explorer"]) ul.tiles .tileIcon svg {
+  width: calc(var(--size-icon) * 2);
+  height: calc(var(--size-icon) * 2);
+}
+
+/* 56px, the specimen's own face. */
+:global(html[data-mode="explorer"]) .gridIcon {
+  width: calc(var(--size-touch-min) + var(--space-3));
+  height: calc(var(--size-touch-min) + var(--space-3));
+}
+
+/* The active face: saffron inside the accent outline, DESIGN.md's fill for the
+ * active item. The global :focus-visible ring stays on top of it.
+ */
+:global(html[data-mode="explorer"]) ul.tiles .tileLink:hover .tileIcon,
+:global(html[data-mode="explorer"]) ul.tiles .tileLink:focus-visible .tileIcon,
+:global(html[data-mode="explorer"]) .gridTile:hover .gridIcon,
+:global(html[data-mode="explorer"]) .gridTile:focus-within .gridIcon {
+  border: var(--border-accent);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--elevation-2);
+}
+
+/* The index as a grid of tiles. Same markup as the list: each row becomes a
+ * card on the raised surface, and the page widens to the home row's 80rem so
+ * the cards have somewhere to go. auto-fill, not auto-fit: a search that
+ * leaves two cards should leave two cards, not two stretched ones.
+ */
+:global(html[data-mode="explorer"]) .allMain {
+  max-width: calc(var(--space-16) * 20);
+}
+
+:global(html[data-mode="explorer"]) .grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, calc(var(--space-16) * 4 + var(--space-8))), 1fr)
+  );
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+:global(html[data-mode="explorer"]) .gridTile {
+  position: relative;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  box-shadow: var(--elevation-1);
+  /* Room for the ring and the zoom when the arrows scroll a card into view. */
+  scroll-margin-block: var(--space-6);
+  transition-property: border-color, box-shadow, transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-glide);
+}
+
+:global(html[data-mode="explorer"]) .gridTile:hover,
+:global(html[data-mode="explorer"]) .gridTile:focus-within {
+  /* Over its neighbours while it is the bigger one. */
+  z-index: 1;
+  border: var(--border-accent);
+  box-shadow: var(--elevation-2);
+}
+
+/* The whole card is the target, though the link is only its title — which is
+ * what keeps the link's name the entry's title and the heading a heading. The
+ * focus ring moves out to the card with it: drawn on the same pseudo-element,
+ * outside the card's 2px border.
+ */
+:global(html[data-mode="explorer"]) .gridLink {
+  transition-property: color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-glide);
+}
+
+:global(html[data-mode="explorer"]) .gridLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-sm);
+}
+
+:global(html[data-mode="explorer"]) .gridLink:focus-visible {
+  outline: none;
+}
+
+:global(html[data-mode="explorer"]) .gridLink:focus-visible::after {
+  outline: var(--focus-ring);
+  outline-offset: calc(var(--focus-ring-offset) + var(--outline-accent-width));
+}
+
+/* The tiles beside the active one dim to the muted text colour — an audited
+ * pair on both surfaces (CONTRAST.md), which an opacity would not be. Keyed on
+ * the row, not on a tile's neighbour: while the pointer crosses the gap between
+ * two tiles the others stay as they are instead of flickering back.
+ */
+:global(html[data-mode="explorer"]) ul.tiles:hover .tileLink:not(:hover):not(:focus),
+:global(html[data-mode="explorer"]) ul.tiles:focus-within .tileLink:not(:hover):not(:focus),
+:global(html[data-mode="explorer"]) .grid:hover .gridTile:not(:hover):not(:focus-within) .gridLink,
+:global(html[data-mode="explorer"]) .grid:focus-within .gridTile:not(:hover):not(:focus-within) .gridLink {
+  color: var(--color-text-muted);
+}
+
+/* Hover and focus zoom (BUILD_PLAN §5's motion mapping; DESIGN.md: "a focused
+ * tile grows slightly and its neighbours recede"). On the --duration-fast and
+ * --ease-glide the tiles already use, so nothing here has a duration of its own.
+ *
+ * Inside no-preference on purpose. Under prefers-reduced-motion the tokens
+ * make every transition instant, but an instant scale is still a tile changing
+ * size under the pointer — so there the tiles do not scale at all, and the
+ * fill, the dimming and the focus ring carry the state. Zoom is never the only
+ * signal in either case.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :global(html[data-mode="explorer"]) ul.tiles .tileLink:hover,
+  :global(html[data-mode="explorer"]) ul.tiles .tileLink:focus-visible,
+  :global(html[data-mode="explorer"]) .gridTile:hover,
+  :global(html[data-mode="explorer"]) .gridTile:focus-within {
+    transform: scale(var(--scale-zoom));
+  }
+
+  :global(html[data-mode="explorer"]) ul.tiles:hover .tileLink:not(:hover):not(:focus),
+  :global(html[data-mode="explorer"]) ul.tiles:focus-within .tileLink:not(:hover):not(:focus),
+  :global(html[data-mode="explorer"]) .grid:hover .gridTile:not(:hover):not(:focus-within),
+  :global(html[data-mode="explorer"]) .grid:focus-within .gridTile:not(:hover):not(:focus-within) {
+    transform: scale(var(--scale-recede));
+  }
 }

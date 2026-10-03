@@ -39,19 +39,33 @@ function modified(event: KeyLike): boolean {
  * A modified arrow is never ours. `Alt+ArrowLeft`, and `Cmd+ArrowLeft` on
  * macOS, is *browser back* — swallowing it would break history navigation for
  * exactly the keyboard visitors this row exists for.
+ *
+ * `columns` is for a grid (feat/shell-tile-grid): how many tiles its first row
+ * holds, as laid out. Left/Right still step in reading order and wrap; Up/Down
+ * move a whole row instead. A step down onto a short last row lands on its
+ * last tile. At the top and bottom edges Up/Down return `null`, so the page
+ * scrolls instead — a grid is longer than a screen, and a wrap would throw the
+ * visitor a page away. One column, or none given, is the row rule above.
  * @returns the index to focus, or `null` when the key is not one the row handles (do not `preventDefault`).
  */
-export function nextIndex(event: KeyLike, current: number, count: number): number | null {
+export function nextIndex(event: KeyLike, current: number, count: number, columns = 1): number | null {
   if (count <= 0 || modified(event)) return null;
   // A row that has never held focus reports -1; treat it as "at the first".
   const from = current >= 0 && current < count ? current : 0;
+  const grid = columns > 1;
   switch (event.key) {
     case "ArrowRight":
-    case "ArrowDown":
       return (from + 1) % count;
     case "ArrowLeft":
-    case "ArrowUp":
       return (from - 1 + count) % count;
+    case "ArrowDown":
+      if (!grid) return (from + 1) % count;
+      if (from + columns < count) return from + columns;
+      // A short last row with nothing in this column: land on its last tile.
+      return Math.floor(from / columns) < Math.floor((count - 1) / columns) ? count - 1 : null;
+    case "ArrowUp":
+      if (!grid) return (from - 1 + count) % count;
+      return from - columns >= 0 ? from - columns : null;
     case "Home":
       return 0;
     case "End":

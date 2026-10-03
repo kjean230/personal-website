@@ -2,13 +2,18 @@ import { describe, expect, it } from "vitest";
 import { FACETS, KINDS } from "../content/schema";
 import {
   ADMIN_HREF,
+  ALL_HREF,
+  ALL_LABEL,
   FACET_ORDER,
   HOME_HREF,
   PRIVACY_HREF,
   RESUME_HREF,
+  SEARCH_MAX_LENGTH,
+  SEARCH_PARAM,
   SECTIONS,
   entryHref,
   parseFacetParam,
+  parseSearchParam,
   sectionForKind,
   sectionFromSegment,
   sectionHref,
@@ -21,7 +26,7 @@ import {
 // brief §2.2 and §4.2 show.
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const STATIC_SEGMENTS = [RESUME_HREF, PRIVACY_HREF, ADMIN_HREF].map((href) => href.slice(1));
+const STATIC_SEGMENTS = [ALL_HREF, RESUME_HREF, PRIVACY_HREF, ADMIN_HREF].map((href) => href.slice(1));
 
 describe("sections", () => {
   it("lists the brief §4.3 tiles in order", () => {
@@ -79,6 +84,14 @@ describe("hrefs", () => {
     expect(ADMIN_HREF).toBe("/admin");
   });
 
+  // Brief §5's "All Software" grid. The URL and the name are the owner's
+  // (handoff/feat-shell-tile-grid.md); the section tests above already hold
+  // that no section segment shadows it.
+  it("names the index of every entry", () => {
+    expect(ALL_HREF).toBe("/all");
+    expect(ALL_LABEL).toBe("All Software");
+  });
+
   it("builds section URLs, with the facet as a query parameter", () => {
     const experience = sectionForKind("experience");
     expect(sectionHref(experience)).toBe("/experience");
@@ -116,5 +129,38 @@ describe("?facet=", () => {
     expect(parseFacetParam("Research")).toEqual({ ok: false });
     expect(parseFacetParam(["research", "corporate"])).toEqual({ ok: false });
     expect(parseFacetParam(["research"])).toEqual({ ok: false });
+  });
+});
+
+describe("?q=", () => {
+  it("is the parameter the index's form sends", () => {
+    expect(SEARCH_PARAM).toBe("q");
+  });
+
+  it("reads absent, empty or blank as no search", () => {
+    for (const value of [undefined, "", "   ", "\t\n"]) {
+      expect(parseSearchParam(value), JSON.stringify(value)).toEqual({ ok: true, query: "" });
+    }
+  });
+
+  // Any text is a search. It is narrowed in code and rendered as text, so
+  // nothing in it needs rejecting — only trimming.
+  it("accepts any text, trimmed, and leaves the rest of it alone", () => {
+    expect(parseSearchParam("guardian")).toEqual({ ok: true, query: "guardian" });
+    expect(parseSearchParam("  Break Through  Tech ")).toEqual({ ok: true, query: "Break Through  Tech" });
+    expect(parseSearchParam('<b>"&%_,()')).toEqual({ ok: true, query: '<b>"&%_,()' });
+  });
+
+  it("accepts a search of exactly the length the form allows, and rejects one past it", () => {
+    expect(parseSearchParam("a".repeat(SEARCH_MAX_LENGTH))).toEqual({
+      ok: true,
+      query: "a".repeat(SEARCH_MAX_LENGTH),
+    });
+    expect(parseSearchParam("a".repeat(SEARCH_MAX_LENGTH + 1))).toEqual({ ok: false });
+  });
+
+  it("rejects a repeated parameter, which a form cannot send", () => {
+    expect(parseSearchParam(["a", "b"])).toEqual({ ok: false });
+    expect(parseSearchParam(["a"])).toEqual({ ok: false });
   });
 });

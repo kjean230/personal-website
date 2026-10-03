@@ -24,15 +24,48 @@
  * tabindexes are written to the DOM directly: re-rendering would reconcile
  * children this component does not own, to no benefit, and *which* tile is
  * active is already visible through `:focus-visible` in CSS.
+ *
+ * `grid` (feat/shell-tile-grid) is the same island around the "All Software"
+ * index, with two differences. A grid is Explorer furniture: its keys and its
+ * roving tabindex apply only under `data-mode="explorer"`, and in Recruiter
+ * mode the index stays what the server sent — a plain list, one tab stop per
+ * entry, like every section page. And Up/Down move a whole row, by the column
+ * count the grid has as laid out. The home row keeps S7's behaviour in every
+ * mode.
  */
 
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { isExplorer } from "./boot";
 import { nextIndex } from "./keys";
 import styles from "./explorer.module.css";
 
-export function TileRow({ children }: { children: ReactNode }) {
+/** The tile a link belongs to: its list item, which is the card on a grid. */
+const tileOf = (link: HTMLElement): HTMLElement => link.closest("li") ?? link;
+
+/**
+ * How many tiles sit on the first row. Read from `offsetTop`, which a
+ * transform does not move — the focused tile is scaled, so its bounding box is
+ * not where its row is.
+ */
+function columnsOf(items: readonly HTMLElement[]): number {
+  const top = tileOf(items[0]).offsetTop;
+  return items.filter((item) => tileOf(item).offsetTop === top).length;
+}
+
+interface TileRowProps {
+  readonly children: ReactNode;
+  /** The list's class; the home row's by default. */
+  readonly className?: string;
+  /** True for the index grid. */
+  readonly grid?: boolean;
+}
+
+export function TileRow({ children, className = styles.tiles, grid = false }: TileRowProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const activeRef = useRef(0);
+
+  /** Whether this list is under the island's control right now. Read on use: the mode is the document's, not React's. */
+  const enabled = useCallback(() => !grid || isExplorer(document.documentElement), [grid]);
 
   /** The row's tiles, in document order. `[data-tile]` so a nested link can never join the row. */
   const tiles = useCallback(
@@ -44,12 +77,12 @@ export function TileRow({ children }: { children: ReactNode }) {
   /** Writes the roving tabindex: exactly one tile is reachable by Tab. */
   const applyRoving = useCallback(() => {
     const items = tiles();
-    if (items.length === 0) return;
+    if (items.length === 0 || !enabled()) return;
     if (activeRef.current >= items.length) activeRef.current = 0;
     for (const [index, tile] of items.entries()) {
       tile.tabIndex = index === activeRef.current ? 0 : -1;
     }
-  }, [tiles]);
+  }, [tiles, enabled]);
 
   // No dependency array: this runs after every render, which is what makes it
   // self-healing. A soft navigation back to `/` can hand the island fresh
@@ -73,19 +106,34 @@ export function TileRow({ children }: { children: ReactNode }) {
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLUListElement>) {
     const items = tiles();
+    if (items.length === 0 || !enabled()) return;
     const current = items.indexOf(document.activeElement as HTMLAnchorElement);
-    const next = nextIndex(event, current >= 0 ? current : activeRef.current, items.length);
+    const next = nextIndex(
+      event,
+      current >= 0 ? current : activeRef.current,
+      items.length,
+      grid ? columnsOf(items) : undefined,
+    );
     // null covers Tab, Enter, Escape and every modified chord — all the
     // browser's, none of ours.
     if (next === null) return;
     event.preventDefault();
     activeRef.current = next;
     applyRoving();
-    items[next]?.focus();
+    if (!grid) {
+      items[next]?.focus();
+      return;
+    }
+    // On a grid the link is only the card's title, so bring the whole card into
+    // view rather than letting focus scroll to the title alone. Whether the
+    // page glides there or jumps is CSS's to say (app.css): no behaviour is
+    // passed, so the mode and prefers-reduced-motion decide, not this file.
+    items[next].focus({ preventScroll: true });
+    tileOf(items[next]).scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
   return (
-    <ul ref={listRef} className={styles.tiles} onFocus={handleFocus} onKeyDown={handleKeyDown}>
+    <ul ref={listRef} className={className} onFocus={handleFocus} onKeyDown={handleKeyDown}>
       {children}
     </ul>
   );

@@ -82,6 +82,77 @@ describe("nextIndex", () => {
   });
 });
 
+// The "All Software" grid (feat/shell-tile-grid). 19 tiles in four columns is
+// the real index on a wide screen: four full rows and a last row of three.
+describe("nextIndex on a grid", () => {
+  const TILES = 19;
+  const COLUMNS = 4;
+  const grid = (k: string, from: number, mods: Partial<KeyLike> = {}) =>
+    nextIndex(key(k, mods), from, TILES, COLUMNS);
+
+  it("moves a whole row on ArrowDown and ArrowUp", () => {
+    expect(grid("ArrowDown", 1)).toBe(5);
+    expect(grid("ArrowUp", 9)).toBe(5);
+  });
+
+  it("still steps in reading order on ArrowRight and ArrowLeft, across a row end", () => {
+    expect(grid("ArrowRight", 3)).toBe(4);
+    expect(grid("ArrowLeft", 4)).toBe(3);
+    expect(grid("ArrowRight", TILES - 1)).toBe(0);
+    expect(grid("ArrowLeft", 0)).toBe(TILES - 1);
+  });
+
+  // Row 3 is tiles 12–15 and the last row is 16–18: nothing sits under tile 15.
+  it("lands on the last tile when the row below is too short to have that column", () => {
+    expect(grid("ArrowDown", 14)).toBe(18);
+    expect(grid("ArrowDown", 15)).toBe(18);
+  });
+
+  // null means "not ours": the island does not preventDefault, so the page
+  // scrolls. A grid is longer than a screen, and wrapping would move the
+  // visitor a page away from where they were looking.
+  it("leaves ArrowUp on the top row and ArrowDown on the bottom row to the browser", () => {
+    for (let i = 0; i < COLUMNS; i += 1) expect(grid("ArrowUp", i), `up from ${i}`).toBeNull();
+    for (let i = 16; i < TILES; i += 1) expect(grid("ArrowDown", i), `down from ${i}`).toBeNull();
+  });
+
+  it("never leaves the grid, from any tile, on any key it handles", () => {
+    for (let from = 0; from < TILES; from += 1) {
+      for (const k of ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Home", "End"]) {
+        const next = grid(k, from);
+        if (next === null) continue;
+        expect(next).toBeGreaterThanOrEqual(0);
+        expect(next).toBeLessThan(TILES);
+      }
+    }
+  });
+
+  it("reaches every tile going down each column from the top row", () => {
+    const seen = new Set<number>();
+    for (let column = 0; column < COLUMNS; column += 1) {
+      for (let at: number | null = column; at !== null; at = grid("ArrowDown", at)) seen.add(at);
+    }
+    expect(seen.size).toBe(TILES);
+  });
+
+  it("keeps Home, End and the modifier rule", () => {
+    expect(grid("Home", 9)).toBe(0);
+    expect(grid("End", 9)).toBe(TILES - 1);
+    expect(grid("ArrowDown", 1, { altKey: true })).toBeNull();
+  });
+
+  // One column is the narrow-screen stack, and it is the row rule: both axes
+  // step and wrap, exactly as the home row does.
+  it("is the row rule when the grid is one column wide", () => {
+    for (let from = 0; from < TILES; from += 1) {
+      for (const k of ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"]) {
+        expect(nextIndex(key(k), from, TILES, 1)).toBe(nextIndex(key(k), from, TILES));
+      }
+    }
+    expect(nextIndex(key("ArrowDown"), TILES - 1, TILES, 1)).toBe(0);
+  });
+});
+
 describe("isBackKey", () => {
   it("claims a bare Escape", () => {
     expect(isBackKey({ key: "Escape" }, false)).toBe(true);

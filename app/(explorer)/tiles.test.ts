@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { STATUSES } from "../../lib/content/schema";
 import { SECTIONS } from "../../lib/routes/table";
-import { HINT_ICONS, PROFILE_ICON, TILE_ICONS, TROPHY_ICONS, inlineIcon, tileIcon } from "./tiles";
+import { ALL_ICON, HINT_ICONS, PROFILE_ICON, TILE_ICONS, TROPHY_ICONS, inlineIcon, tileIcon } from "./tiles";
 
 // The icon set lives only in design/assets/icons/. Two things can rot here
 // without anyone noticing, and both are pinned below: a section gaining no
@@ -121,7 +121,7 @@ describe("TROPHY_ICONS", () => {
 });
 
 describe("every inlined icon", () => {
-  const all = [...TILE_ICONS.values(), HINT_ICONS.a, HINT_ICONS.b, PROFILE_ICON];
+  const all = [...TILE_ICONS.values(), HINT_ICONS.a, HINT_ICONS.b, PROFILE_ICON, ALL_ICON];
 
   it("is decorative and free of ids", () => {
     for (const svg of all) {
@@ -139,6 +139,13 @@ describe("every inlined icon", () => {
       expect(svg).toContain('stroke="currentColor"');
       expect(svg).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     }
+  });
+
+  // feat/shell-tile-grid: the index has a drawing of its own, so the link to
+  // it can never be mistaken for one of the six section tiles.
+  it("gives the index a glyph that is none of the section drawings", () => {
+    expect(ALL_ICON).toMatch(/^<svg\b/);
+    expect([...TILE_ICONS.values()]).not.toContain(ALL_ICON);
   });
 
   it("provides both button hint glyphs", () => {

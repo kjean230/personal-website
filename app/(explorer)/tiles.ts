@@ -14,8 +14,8 @@
  * copied into `app/`. Two consequences worth stating, because neither is
  * visible from the call site:
  *
- *  1. Every read is a **literal** path. `/[section]` and `/[section]/[slug]`
- *     render per request, so these reads happen at cold start inside the
+ *  1. Every read is a **literal** path. `/[section]`, `/[section]/[slug]` and
+ *     `/all` render per request, so these reads happen at cold start inside the
  *     serverless function, not at build; `@vercel/nft` can only trace a path it
  *     can evaluate statically. `next.config.ts` also names the directory in
  *     `outputFileTracingIncludes`, because a local `next start` runs from the
@@ -111,6 +111,15 @@ export const TROPHY_ICONS = {
  */
 export const PROFILE_ICON = read(
   readFileSync(join(process.cwd(), "design/assets/icons/profile-select.svg"), "utf8"),
+);
+
+/**
+ * The glyph on the link to the "All Software" index (feat/shell-tile-grid):
+ * the four squares Phase 0 drew for it, shown where Phase 0's specimen put it —
+ * a circular button beside the tile row, not a seventh tile.
+ */
+export const ALL_ICON = read(
+  readFileSync(join(process.cwd(), "design/assets/icons/all-software.svg"), "utf8"),
 );
 
 for (const section of SECTIONS) {

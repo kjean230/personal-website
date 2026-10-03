@@ -10,7 +10,8 @@
  * `listSection` per kind). Loaders are framework-free: they return
  * discriminated results and the page files map them to `notFound()` /
  * `permanentRedirect()`, so the loaders are unit-testable with fake queries
- * and the same functions serve both renderers.
+ * and the same functions serve both renderers. `loadAll` for `/all` reads the
+ * same lists as the sitemap and narrows them in code.
  *
  * Errors are never swallowed: a `ContentQueryError` or
  * `ContentValidationError` from the query layer propagates and fails the
@@ -29,6 +30,7 @@ import {
 } from "../content/queries";
 import type { EntrySummary, Facet, Link } from "../content/schema";
 import {
+  ALL_HREF,
   FACET_ORDER,
   HOME_HREF,
   RESUME_HREF,
@@ -131,6 +133,47 @@ export async function loadTrophies(
   return narrowTrophies(await queries.listTrophies(), facet);
 }
 
+// All Software --------------------------------------------------------------
+
+export interface AllPage {
+  /** The search as typed, trimmed; `""` when the index is not narrowed. */
+  readonly query: string;
+  /** How many entries the site has, whatever the search. */
+  readonly total: number;
+  /** The rows to list, in tile order; every entry appears at most once. */
+  readonly entries: readonly EntrySummary[];
+}
+
+/**
+ * Everything `/all` renders (brief §5: the "full searchable index of every
+ * entry"): one flat list of every kind, in the same tile order a section
+ * uses, optionally narrowed by a search.
+ *
+ * The search contract is the owner's (handoff/feat-shell-tile-grid.md). It
+ * reads three fields — title, subtitle and summary, which are also what an
+ * index row shows, so every match is visible on the page. It is
+ * case-insensitive, every word typed must appear somewhere in those fields,
+ * and a match keeps its place: nothing is ranked. Tags are not searched; the
+ * plan gives this row `entries` only.
+ *
+ * It narrows in code rather than in the request. The lists are the ones the
+ * sitemap already reads, held by the fetch cache, so a search costs no
+ * database read — and what a visitor types never reaches a PostgREST filter.
+ * @returns the index; `entries` is empty when nothing matches.
+ */
+export async function loadAll(query: string, queries: RouteQueries = defaultQueries): Promise<AllPage> {
+  const lists = await Promise.all(
+    SECTIONS.flatMap((section) => section.kinds).map((kind) => queries.listSection(kind, {})),
+  );
+  const all = lists.flat().sort(compareRecency);
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const entries = all.filter((entry) => {
+    const text = [entry.title, entry.subtitle, entry.summary].join("\n").toLowerCase();
+    return words.every((word) => text.includes(word));
+  });
+  return { query, total: all.length, entries };
+}
+
 // Resume --------------------------------------------------------------------
 
 /** One resume row: a tile row and the entry's external links. */
@@ -206,12 +249,13 @@ export interface SitemapUrl {
 
 /**
  * Every canonical URL the site serves, derived from the route table and the
- * query layer rather than listed: `/`, `/resume`, then each section followed
- * by its entries in tile order. Adding a section stays one `SECTIONS` entry.
+ * query layer rather than listed: `/`, `/resume`, `/all`, then each section
+ * followed by its entries in tile order. Adding a section stays one
+ * `SECTIONS` entry.
  *
  * What is left out is deliberate. `?facet=` views are subsets of their
- * section and canonicalise to it; `/privacy` and `/admin` are reserved and
- * have no page. `lastModified` is only written where the database records
+ * section and canonicalise to it, as a `?q=` search does to `/all`;
+ * `/privacy` and `/admin` are reserved and have no page. `lastModified` is only written where the database records
  * it — an entry's `updated_at`, which the row trigger stamps on real edits
  * only (the content seed upserts `where … is distinct from`) — and no
  * priority or change frequency is invented for anything.
@@ -221,7 +265,7 @@ export async function loadSitemap(queries: RouteQueries = defaultQueries): Promi
   const lists = await Promise.all(
     SECTIONS.map((section) => Promise.all(section.kinds.map((kind) => queries.listSection(kind, {})))),
   );
-  const urls: SitemapUrl[] = [{ path: HOME_HREF }, { path: RESUME_HREF }];
+  const urls: SitemapUrl[] = [{ path: HOME_HREF }, { path: RESUME_HREF }, { path: ALL_HREF }];
   SECTIONS.forEach((section, index) => {
     urls.push({ path: sectionHref(section) });
     for (const entry of lists[index].flat().sort(compareRecency)) {

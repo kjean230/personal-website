@@ -18,14 +18,19 @@
  * /<section>/<slug>      getEntryBySlug(slug)                   the entry's canonical URL; null → 404;
  *                                                               a slug reached under the wrong section
  *                                                               308s to its canonical URL
+ * /all                   listSection(kind) per kind of every    the "All Software" index (brief §5):
+ *                        section                                every entry once, in tile order;
+ *                                                               ?q=<words> narrows it; a repeated or
+ *                                                               over-long q → 404
  * /resume                listSection(experience | project |     plain HTML, one action from anywhere
  *                        education) · listTrophies() ·          (the site header links it); reads no
  *                        listLinks()                            dynamic input, so it prerenders
  * /privacy               —                                      reserved: brief §2.3, Phase 3 hardening
  * /admin                 —                                      reserved: lane/admin (Supabase Auth)
- * /sitemap.xml           listSection(kind) per kind of every    app/sitemap.ts: /, /resume, every section
- *                        section                                and every entry's canonical URL — never a
- *                                                               ?facet= view, never a reserved route
+ * /sitemap.xml           listSection(kind) per kind of every    app/sitemap.ts: /, /resume, /all, every
+ *                        section                                section and every entry's canonical URL —
+ *                                                               never a ?facet= or ?q= view, never a
+ *                                                               reserved route
  * /robots.txt            —                                      app/robots.ts: allow all, name the sitemap
  * /opengraph-image       —                                      app/opengraph-image.tsx: the one site-wide
  *                                                               share image, rendered at build
@@ -40,6 +45,7 @@
  * lib/content/schema.ts and are never redeclared here.
  */
 
+import { z } from "zod";
 import { FACETS, KINDS, isFacet, type Facet, type Kind } from "../content/schema";
 
 // Static routes -------------------------------------------------------------
@@ -47,6 +53,14 @@ import { FACETS, KINDS, isFacet, type Facet, type Kind } from "../content/schema
 export const HOME_HREF = "/";
 /** Brief §2.2: plain HTML, reachable in one action from anywhere (site header). Rendered by S6. */
 export const RESUME_HREF = "/resume";
+/**
+ * Brief §5's "All Software" grid: the searchable index of every entry. Not a
+ * section — it lists every kind — so it is a static route with its own page
+ * file. The URL and the name are the owner's (handoff/feat-shell-tile-grid.md).
+ */
+export const ALL_HREF = "/all";
+/** The index's heading and the label of the link to it. */
+export const ALL_LABEL = "All Software";
 /** Brief §2.3. Reserved; the page lands in Phase 3 hardening (plan §6). */
 export const PRIVACY_HREF = "/privacy";
 /** Brief §7. Reserved for lane/admin. Never linked from the public site. */
@@ -101,7 +115,7 @@ export function sectionForKind(kind: Kind): Section {
 }
 
 /**
- * Resolves the first URL segment. Static routes (`resume`, `privacy`,
+ * Resolves the first URL segment. Static routes (`all`, `resume`, `privacy`,
  * `admin`) are not sections and resolve to `null`, as does anything unknown.
  * @returns the section, or `null` when the segment is not one (→ 404).
  */
@@ -145,3 +159,28 @@ export function parseFacetParam(value: string | readonly string[] | undefined): 
 
 /** The facets, in chip order (brief §4.2). Re-exported so pages import the route table only. */
 export const FACET_ORDER: readonly Facet[] = FACETS;
+
+// Search query parameter ----------------------------------------------------
+
+/** The name of the index's search parameter: `/all?q=<words>`. The form field and the page share it. */
+export const SEARCH_PARAM = "q";
+/** The longest search the index accepts. The form's `maxlength` and the parser share it. */
+export const SEARCH_MAX_LENGTH = 100;
+
+const searchValue = z.string().max(SEARCH_MAX_LENGTH);
+
+export type SearchParam =
+  | { readonly ok: true; readonly query: string }
+  | { readonly ok: false };
+
+/**
+ * Reads `?q=` as Next hands it over. Absent or blank means no search — the
+ * whole index. Any text is a valid search, so the only invalid values are the
+ * ones a form cannot send: a repeated parameter, and one past the length cap.
+ * @returns the trimmed query (`""` for none), or `ok: false` (→ 404).
+ */
+export function parseSearchParam(value: string | readonly string[] | undefined): SearchParam {
+  if (value === undefined) return { ok: true, query: "" };
+  const parsed = searchValue.safeParse(value);
+  return parsed.success ? { ok: true, query: parsed.data.trim() } : { ok: false };
+}
