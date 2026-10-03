@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { STATUSES } from "../../lib/content/schema";
 import { SECTIONS } from "../../lib/routes/table";
-import { HINT_ICONS, TILE_ICONS, TROPHY_ICONS, inlineIcon, tileIcon } from "./tiles";
+import { HINT_ICONS, PROFILE_ICON, TILE_ICONS, TROPHY_ICONS, inlineIcon, tileIcon } from "./tiles";
 
 // The icon set lives only in design/assets/icons/. Two things can rot here
 // without anyone noticing, and both are pinned below: a section gaining no
@@ -121,7 +121,7 @@ describe("TROPHY_ICONS", () => {
 });
 
 describe("every inlined icon", () => {
-  const all = [...TILE_ICONS.values(), HINT_ICONS.a, HINT_ICONS.b];
+  const all = [...TILE_ICONS.values(), HINT_ICONS.a, HINT_ICONS.b, PROFILE_ICON];
 
   it("is decorative and free of ids", () => {
     for (const svg of all) {

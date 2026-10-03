@@ -103,6 +103,16 @@ export const TROPHY_ICONS = {
   archived: read(readFileSync(join(process.cwd(), "design/assets/icons/trophy-locked.svg"), "utf8")),
 } as const;
 
+/**
+ * The glyph on both profile choices (feat/shell-boot-profile). One drawing for
+ * two profiles on purpose: no icon was drawn for either mode, and the icon set
+ * is not redrawn here (DESIGN.md). The label beside it is what tells them
+ * apart, as it is for every other glyph in the shell.
+ */
+export const PROFILE_ICON = read(
+  readFileSync(join(process.cwd(), "design/assets/icons/profile-select.svg"), "utf8"),
+);
+
 for (const section of SECTIONS) {
   if (!ICONS[section.segment]) throw new Error(`tiles: section "${section.segment}" has no icon`);
 }

@@ -155,6 +155,135 @@
   height: 100%;
 }
 
+/* Boot, then profile select (feat/shell-boot-profile, brief §5) — one modal
+ * <dialog> covering the viewport on the surface colour.
+ *
+ * The whole sequence is the three keyframe animations below, and every
+ * duration and easing in them is a token. That is what makes the boot ≈1.2s
+ * (--duration-boot) without a number in this file, and what makes
+ * prefers-reduced-motion work with no media query: tokens.css zeroes every
+ * --duration-*, so each animation is at its end state on the first frame and
+ * the dialog opens as the profile select. The boot does not run (DESIGN.md).
+ *
+ * `display` is set only while [open]. The UA's `dialog:not([open])` rule is
+ * what keeps this out of the page when nothing opens it — JavaScript off — and
+ * an unconditional `display` here would override it and put a full-screen
+ * panel over the recruiter site.
+ */
+.boot {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: var(--space-6);
+  border: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  /* A short viewport scrolls the dialog, not the inert page behind it. */
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* Centred with auto margins on the first and last child rather than
+ * align-content: when the choices stack on a short screen and overflow, auto
+ * margins collapse to zero and the top stays reachable; centring would push it
+ * above the scroll origin.
+ */
+.boot[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+/* The mark: the KJ badge at twice its native 64px, so its 4px corner is
+ * 2 × --radius-md and the wrapper's shadow follows the drawing's own edge.
+ *
+ * It arrives the way DESIGN.md says things do — fast departure, long
+ * deceleration, no overshoot — and then the hard offset shadow lands under it:
+ * "a stamp, not a glow", which is also what the chime is a recording of.
+ */
+.bootMark {
+  width: calc(var(--space-16) * 2);
+  height: calc(var(--space-16) * 2);
+  margin-top: auto;
+  border-radius: calc(var(--radius-md) * 2);
+  box-shadow: var(--elevation-3);
+  animation:
+    bootLand var(--duration-slow) var(--ease-glide) both,
+    bootStamp var(--duration-fast) var(--ease-glide) var(--duration-slow) both;
+}
+
+.bootMark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes bootLand {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--space-6) * -1));
+  }
+}
+
+@keyframes bootStamp {
+  from {
+    box-shadow: var(--elevation-0);
+  }
+}
+
+/* The profile select. It is laid out from the first frame — so the mark never
+ * moves when it appears — and revealed for the last --duration-base of the
+ * boot, which makes the choices usable at --duration-boot exactly.
+ *
+ * `visibility` rides in the keyframe so that, until then, the choices are out
+ * of the tab order and the accessibility tree and cannot be hit: a choice that
+ * is focusable while transparent would be activated by an Enter meant to skip.
+ */
+.bootSelect {
+  display: grid;
+  gap: var(--space-6);
+  /* 8 × 4rem = 32rem: two tiles side by side, each over the row's 12rem minimum. */
+  width: min(100%, calc(var(--space-16) * 8));
+  margin-bottom: auto;
+  text-align: center;
+  animation: bootReveal var(--duration-base) var(--ease-glide)
+    calc(var(--duration-boot) - var(--duration-base)) both;
+}
+
+@keyframes bootReveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-4));
+    visibility: hidden;
+  }
+}
+
+.bootSelect .hints {
+  justify-content: center;
+  margin: 0;
+}
+
+.bootTitle {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+/* A choice is a <button> wearing the tile face. Buttons do not inherit the
+ * page's typeface, and nothing else about them needs restating.
+ */
+.choice {
+  font-family: inherit;
+  cursor: pointer;
+}
+
 /* Corner button hints (brief §2.1's borrowed grammar, this project's glyphs). */
 .hints {
   display: flex;

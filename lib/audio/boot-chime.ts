@@ -5,11 +5,15 @@
  * repo as the authoritative composition record (see DESIGN.md). Every number
  * that defines the sound lives in `spec`; `play()` is a renderer of that spec.
  *
- * Deliberately imported nowhere yet. Sound is off by default (brief §2.2) and
- * the boot sequence belongs to `feat/shell-boot-profile`. When it is wired:
+ * Deliberately imported nowhere yet. Sound is off by default (brief §2.2), and
+ * `feat/shell-boot-profile` shipped the boot sequence silent on the owner's
+ * decision: there is no opt-in until `feat/shell-settings-notifications`
+ * builds the sound toggle, and the wiring lands with it. When it is wired:
  * call `play()` only after the visitor has opted in, only from a user gesture
- * (browsers gate AudioContext on one), and never under prefers-reduced-motion
- * — the boot sequence does not run there, so neither does this.
+ * (browsers gate AudioContext on one — and a boot that starts on page load has
+ * none, so that row also decides *when* in the boot this can play), and never
+ * under prefers-reduced-motion — the boot sequence does not run there, so
+ * neither does this.
  */
 
 export interface ThudSpec {

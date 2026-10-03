@@ -61,6 +61,32 @@ export function nextIndex(event: KeyLike, current: number, count: number): numbe
   }
 }
 
+const SKIP_KEYS: ReadonlySet<string> = new Set([
+  "Enter",
+  "Escape",
+  "Tab",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+]);
+
+/**
+ * Whether a key press skips the boot sequence (brief §5: "skippable").
+ *
+ * "Any key" in spirit, an allowlist in fact: every printable key plus the keys
+ * a visitor reaches for to get past a splash. The island calls
+ * `preventDefault` on a skip, so anything outside this list — `F5`, `F11`, a
+ * media key — and every modified chord stays the browser's. Escape is on the
+ * list because during the boot it means "get on with it"; only on the profile
+ * select does it mean "dismiss", and there the dialog handles it natively.
+ * @returns true when the key should end the boot early.
+ */
+export function isSkipKey(event: KeyLike): boolean {
+  if (modified(event)) return false;
+  return event.key.length === 1 || SKIP_KEYS.has(event.key);
+}
+
 /** The extra fields the Back rule reads beyond a plain key chord. */
 export interface BackKeyLike extends KeyLike {
   /** True mid-IME-composition, when Escape cancels the composition instead. */

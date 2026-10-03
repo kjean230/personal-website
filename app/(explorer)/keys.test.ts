@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isBackKey, nextIndex, type KeyLike } from "./keys";
+import { isBackKey, isSkipKey, nextIndex, type KeyLike } from "./keys";
 
 // The shell's key rules (brief §2.2: "arrows navigate, Enter = A, Escape = B,
 // roving tabindex"). The DOM wiring lives in the two islands and is covered by
@@ -107,5 +107,44 @@ describe("isBackKey", () => {
 
   it("leaves Escape to a field or dialog that owns it", () => {
     expect(isBackKey({ key: "Escape" }, true)).toBe(false);
+  });
+});
+
+// Brief §5: the boot is "skippable". The island calls preventDefault on a
+// skip, so what is *not* on this list matters as much as what is.
+describe("isSkipKey", () => {
+  it("skips on the keys a visitor reaches for", () => {
+    for (const k of ["Enter", "Escape", "Tab", " ", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]) {
+      expect(isSkipKey(key(k)), k).toBe(true);
+    }
+  });
+
+  it("skips on any printable key", () => {
+    for (const k of ["a", "Z", "1", "/", "é"]) {
+      expect(isSkipKey(key(k)), k).toBe(true);
+    }
+  });
+
+  // F5 reloads, F11 is fullscreen, F12 opens the tools: swallowing one would
+  // take a browser function away for the length of the boot.
+  it("leaves function, lock and media keys to the browser", () => {
+    for (const k of ["F5", "F11", "F12", "CapsLock", "MediaPlayPause", "PageDown", "Unidentified"]) {
+      expect(isSkipKey(key(k)), k).toBe(false);
+    }
+  });
+
+  it("ignores a modifier pressed on its own", () => {
+    for (const k of ["Shift", "Control", "Alt", "Meta"]) {
+      expect(isSkipKey(key(k)), k).toBe(false);
+    }
+  });
+
+  // Cmd+R, Ctrl+L, Alt+ArrowLeft: every chord is the browser's or the OS's.
+  it("never claims a modified chord", () => {
+    for (const mod of ["altKey", "ctrlKey", "metaKey", "shiftKey"] as const) {
+      for (const k of ["r", "l", "Enter", "Escape", "Tab", "ArrowLeft"]) {
+        expect(isSkipKey(key(k, { [mod]: true })), `${mod}+${k}`).toBe(false);
+      }
+    }
   });
 });
