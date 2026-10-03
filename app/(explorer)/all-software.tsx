@@ -18,6 +18,10 @@
  * the list (`loadAll`), and no script is involved. The summary is always on
  * the row, never revealed on hover — it is one of the three fields a search
  * reads, so a match has to be something the visitor can see.
+ *
+ * Groups (feat/shell-facets) sits between the form and the list: the facet
+ * and tag chips of `groups.tsx`. One thing narrows the index at a time, so the
+ * form sends only `q` — a search drops the group — and no chip carries `q`.
  */
 
 import Link from "next/link";
@@ -32,6 +36,7 @@ import {
 } from "../../lib/routes/table";
 import { EntryDates } from "../entry-dates";
 import site from "../site.module.css";
+import { Groups } from "./groups";
 import { TileRow } from "./tile-row";
 import { ALL_ICON, tileIcon } from "./tiles";
 import styles from "./explorer.module.css";
@@ -63,9 +68,30 @@ export function AllSoftwareLink() {
 
 const plural = (count: number) => (count === 1 ? "entry" : "entries");
 
-export function AllSoftware({ page }: { page: AllPage }) {
-  const searching = page.query !== "";
+/**
+ * The line above the list. A search keeps the wording it has had; a group
+ * says how many of the entries it holds; and a group with nothing in it — a
+ * tag no entry carries yet — says what an empty section page says.
+ */
+function statusLine(page: AllPage, query: string): string {
   const found = page.entries.length;
+  const entries = `${page.total} ${plural(page.total)}`;
+  if (page.filter.kind === "search") {
+    return found === 0 ? `Nothing matches “${query}”.` : `${found} of ${entries} match “${query}”`;
+  }
+  if (found === 0) return "Nothing here yet.";
+  return page.filter.kind === "none" ? entries : `${found} of ${entries}`;
+}
+
+export function AllSoftware({ page }: { page: AllPage }) {
+  const { filter } = page;
+  const searching = filter.kind === "search";
+  const query = searching ? filter.query : "";
+  const found = page.entries.length;
+  // One grid per view. A chip is a soft navigation, which would otherwise keep
+  // the island mounted with its tab stop on whichever card the last view left
+  // it; a new key gives each narrowed list a grid that starts on its first.
+  const view = filter.kind === "facet" ? filter.facet : filter.kind === "tag" ? filter.slug : query;
 
   return (
     <>
@@ -77,7 +103,7 @@ export function AllSoftware({ page }: { page: AllPage }) {
           id="search"
           name={SEARCH_PARAM}
           type="search"
-          defaultValue={page.query}
+          defaultValue={query}
           maxLength={SEARCH_MAX_LENGTH}
           className={styles.searchInput}
         />
@@ -90,17 +116,10 @@ export function AllSoftware({ page }: { page: AllPage }) {
           </Link>
         )}
       </form>
-      <p className={site.note}>
-        {!searching
-          ? page.total === 0
-            ? "Nothing here yet."
-            : `${page.total} ${plural(page.total)}`
-          : found === 0
-            ? `Nothing matches “${page.query}”.`
-            : `${found} of ${page.total} ${plural(page.total)} match “${page.query}”`}
-      </p>
+      <Groups facets={page.facets} tags={page.tags} />
+      <p className={site.note}>{statusLine(page, query)}</p>
       {found > 0 && (
-        <TileRow grid className={`${site.entryList} ${styles.grid}`}>
+        <TileRow grid key={`${filter.kind}:${view}`} className={`${site.entryList} ${styles.grid}`}>
           {page.entries.map((entry) => {
             const section = sectionForKind(entry.kind);
             return (

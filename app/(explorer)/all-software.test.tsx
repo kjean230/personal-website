@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { EntrySummary, Kind } from "../../lib/content/schema";
-import type { AllPage } from "../../lib/routes/load";
+import type { AllPage, FacetChip } from "../../lib/routes/load";
 import { ALL_HREF, ALL_LABEL, SEARCH_MAX_LENGTH, SEARCH_PARAM, entryHref } from "../../lib/routes/table";
 import { AllSoftware, AllSoftwareLink } from "./all-software";
 
@@ -47,14 +47,29 @@ const entries = [
   entry({ kind: "interest", slug: "a-team", title: "A followed team" }),
 ];
 
+const facets: FacetChip[] = [
+  { facet: null, label: "All", count: entries.length, href: "/all", active: true },
+  { facet: "research", label: "Research", count: 1, href: "/all?facet=research", active: false },
+];
+
 const render = (page: Partial<AllPage> = {}) =>
-  renderToStaticMarkup(<AllSoftware page={{ query: "", total: entries.length, entries, ...page }} />);
+  renderToStaticMarkup(
+    <AllSoftware page={{ filter: { kind: "none" }, total: entries.length, entries, facets, tags: [], ...page }} />,
+  );
+
+/**
+ * The markup with the Groups region taken out — the form, the status line and
+ * the entry list. Groups has its own tests (groups.test.tsx); the ones here
+ * that count rows, glyphs and lists are about the index itself.
+ */
+const withoutGroups = (markup: string) => markup.replace(/<nav\b[\s\S]*?<\/nav>/, "");
 
 describe("AllSoftware", () => {
   const html = render();
+  const rows = withoutGroups(html);
 
   it("lists each entry once, as a link to its canonical URL", () => {
-    expect(html.match(/<li\b/g)).toHaveLength(entries.length);
+    expect(rows.match(/<li\b/g)).toHaveLength(entries.length);
     for (const item of entries) {
       expect(html.split(`href="${entryHref(item)}"`), item.slug).toHaveLength(2);
     }
@@ -84,11 +99,11 @@ describe("AllSoftware", () => {
   });
 
   it("marks each link for the island, and nothing else", () => {
-    expect(html.match(/data-tile/g)).toHaveLength(entries.length);
+    expect(rows.match(/data-tile/g)).toHaveLength(entries.length);
   });
 
   it("draws one decorative glyph per row and adds no second accessible name", () => {
-    expect(html.match(/aria-hidden="true"/g)).toHaveLength(entries.length);
+    expect(rows.match(/aria-hidden="true"/g)).toHaveLength(entries.length);
     expect(html).not.toMatch(/role="img"/);
     expect(html).not.toMatch(/<title/);
   });
@@ -136,8 +151,8 @@ describe("the search form", () => {
 });
 
 describe("a search", () => {
-  const found = render({ query: "machine", entries: [entries[0], entries[2]] });
-  const none = render({ query: "zzz", entries: [] });
+  const found = render({ filter: { kind: "search", query: "machine" }, entries: [entries[0], entries[2]] });
+  const none = render({ filter: { kind: "search", query: "zzz" }, entries: [] });
 
   it("keeps the search in the field", () => {
     expect(found).toMatch(/<input[^>]*value="machine"/);
@@ -145,7 +160,7 @@ describe("a search", () => {
 
   it("says how many of the entries match, and lists only those", () => {
     expect(found).toContain(`2 of ${entries.length} entries match “machine”`);
-    expect(found.match(/<li\b/g)).toHaveLength(2);
+    expect(withoutGroups(found).match(/<li\b/g)).toHaveLength(2);
   });
 
   it("links back to the whole index", () => {
@@ -155,14 +170,14 @@ describe("a search", () => {
 
   it("says so when nothing matches, and renders no list", () => {
     expect(none).toContain("Nothing matches “zzz”.");
-    expect(none).not.toMatch(/<ul\b/);
-    expect(none).not.toMatch(/<li\b/);
+    expect(withoutGroups(none)).not.toMatch(/<ul\b/);
+    expect(withoutGroups(none)).not.toMatch(/<li\b/);
   });
 
   // The search is the one piece of visitor input on the site. It is only ever
   // a React text child and an input's value, so it arrives escaped.
   it("renders the search as text, never as markup", () => {
-    const hostile = render({ query: '"><img src=x onerror=alert(1)>', entries: [] });
+    const hostile = render({ filter: { kind: "search", query: '"><img src=x onerror=alert(1)>' }, entries: [] });
     expect(hostile).not.toMatch(/<img\b/);
     expect(hostile).toContain("&lt;img src=x onerror=alert(1)&gt;");
   });
@@ -170,7 +185,56 @@ describe("a search", () => {
   it("says the site is empty rather than that nothing matches, when there is nothing to search", () => {
     const empty = render({ total: 0, entries: [] });
     expect(empty).toContain("Nothing here yet.");
-    expect(empty).not.toMatch(/<ul\b/);
+    expect(withoutGroups(empty)).not.toMatch(/<ul\b/);
+  });
+});
+
+// Groups on the index (feat/shell-facets). One thing narrows the index at a
+// time, so the form and the chips never carry each other.
+describe("Groups on the index", () => {
+  const html = render();
+  const research = render({ filter: { kind: "facet", facet: "research" }, entries: [entries[0]] });
+  const emptyTag = render({ filter: { kind: "tag", slug: "insurance" }, entries: [] });
+
+  it("sits between the search form and the status line", () => {
+    const form = html.indexOf("</form>");
+    const nav = html.indexOf("<nav");
+    const status = html.indexOf(`${entries.length} entries`);
+    expect(form).toBeGreaterThan(-1);
+    expect(nav).toBeGreaterThan(form);
+    expect(status).toBeGreaterThan(html.indexOf("</nav>"));
+  });
+
+  it("offers the chips whatever is narrowing the index, a search included", () => {
+    for (const markup of [html, research, emptyTag, render({ filter: { kind: "search", query: "machine" } })]) {
+      expect(markup).toContain('aria-label="Groups"');
+      expect(markup).toContain('href="/all?facet=research"');
+    }
+  });
+
+  it("says how many of the entries a group holds", () => {
+    expect(research).toContain(`>1 of ${entries.length} entries<`);
+    expect(withoutGroups(research).match(/<li\b/g)).toHaveLength(1);
+  });
+
+  // A tag that exists and has no entries: the words an empty section uses.
+  it("says what an empty section says for a group with nothing in it, and renders no list", () => {
+    expect(emptyTag).toContain("Nothing here yet.");
+    expect(emptyTag).not.toContain("Nothing matches");
+    expect(withoutGroups(emptyTag)).not.toMatch(/<ul\b/);
+  });
+
+  it("keeps the form to the search alone, so a search drops the group", () => {
+    const fields = research.match(/<input\b[^>]*>/g) ?? [];
+    expect(fields).toHaveLength(1);
+    expect(fields[0]).toContain(`name="${SEARCH_PARAM}"`);
+    expect(fields[0]).toContain('value=""');
+    expect(research).not.toMatch(/type="hidden"/);
+  });
+
+  it("offers Show all for a search only: a group is left through the All chip", () => {
+    expect(research).not.toContain("Show all");
+    expect(emptyTag).not.toContain("Show all");
   });
 });
 

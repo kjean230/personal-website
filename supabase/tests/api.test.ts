@@ -5,9 +5,10 @@ import {
   listLinks,
   listRelated,
   listSection,
+  listTagGroups,
   listTrophies,
 } from "../../lib/content/queries";
-import { ContentValidationError, ENTRY_COLUMNS, FACETS, KINDS } from "../../lib/content/schema";
+import { ContentValidationError, ENTRY_COLUMNS, FACETS, KINDS, TAG_CATEGORIES } from "../../lib/content/schema";
 import { awaitPostgrest, createPool, createTestClient } from "./harness";
 
 // The query layer (lib/content) against the migrated database, read the way
@@ -194,6 +195,46 @@ describe("links", () => {
     expect(credential.map((link) => link.kind)).toEqual(["profile"]);
     const detail = await getEntryBySlug(slug.certification, client);
     expect(credential.map((link) => link.id)).toEqual(detail?.links.map((link) => link.id));
+  });
+});
+
+// feat/shell-facets: the read Groups is built from. The fixture seeds one tag
+// per category (supabase/seed.sql) and deliberately attaches the team tag to
+// nothing; the content seed has no tags yet. Expected values come from SQL, so
+// tags the owner adds later do not break this file.
+describe("tags", () => {
+  const FIXTURE_TEAM_TAG = "00000000-0000-4000-8000-000000000204";
+
+  it("reads every tag once, ordered by slug, with exactly the entries a SQL join gives it", async () => {
+    const { rows } = await pool.query<{ id: string; slug: string; category: string; label: string; entry_ids: string[] }>(
+      `select t.id, t.slug, t.category, t.label,
+              coalesce(array_agg(et.entry_id::text) filter (where et.entry_id is not null), '{}') as entry_ids
+         from public.tags t
+         left join public.entry_tags et on et.tag_id = t.id
+        group by t.id
+        order by t.slug`,
+    );
+    const groups = await listTagGroups(client);
+    expect(groups.map((group) => group.tag.slug)).toEqual(rows.map((row) => row.slug));
+    for (const row of rows) {
+      const group = groups.find((candidate) => candidate.tag.id === row.id);
+      expect(group?.tag, row.slug).toEqual({ id: row.id, slug: row.slug, label: row.label, category: row.category });
+      expect([...(group?.entryIds ?? [])].sort(), row.slug).toEqual([...row.entry_ids].sort());
+    }
+    // Every pair is accounted for: nothing dropped, nothing counted twice.
+    const { rows: pairs } = await pool.query<{ n: number }>("select count(*)::int as n from public.entry_tags");
+    expect(groups.reduce((sum, group) => sum + group.entryIds.length, 0)).toBe(pairs[0].n);
+  });
+
+  it("keeps a tag no entry carries, with no entries", async () => {
+    const team = (await listTagGroups(client)).find((group) => group.tag.id === FIXTURE_TEAM_TAG);
+    expect(team?.tag.category).toBe("team");
+    expect(team?.entryIds).toEqual([]);
+  });
+
+  it("reads a tag of every category from the fixture", async () => {
+    const categories = new Set((await listTagGroups(client)).map((group) => group.tag.category));
+    for (const category of TAG_CATEGORIES) expect(categories, category).toContain(category);
   });
 });
 

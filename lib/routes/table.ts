@@ -19,9 +19,11 @@
  *                                                               a slug reached under the wrong section
  *                                                               308s to its canonical URL
  * /all                   listSection(kind) per kind of every    the "All Software" index (brief §5):
- *                        section                                every entry once, in tile order;
- *                                                               ?q=<words> narrows it; a repeated or
- *                                                               over-long q → 404
+ *                        section · listTagGroups()              every entry once, in tile order;
+ *                                                               one of ?q=<words> | ?facet=<facet> |
+ *                                                               ?tag=<slug> narrows it (Groups, brief
+ *                                                               §5); two at once, a repeated or invalid
+ *                                                               value, or a slug no tag has → 404
  * /resume                listSection(experience | project |     plain HTML, one action from anywhere
  *                        education) · listTrophies() ·          (the site header links it); reads no
  *                        listLinks()                            dynamic input, so it prerenders
@@ -29,8 +31,8 @@
  * /admin                 —                                      reserved: lane/admin (Supabase Auth)
  * /sitemap.xml           listSection(kind) per kind of every    app/sitemap.ts: /, /resume, /all, every
  *                        section                                section and every entry's canonical URL —
- *                                                               never a ?facet= or ?q= view, never a
- *                                                               reserved route
+ *                                                               never a ?facet=, ?q= or ?tag= view, never
+ *                                                               a reserved route
  * /robots.txt            —                                      app/robots.ts: allow all, name the sitemap
  * /opengraph-image       —                                      app/opengraph-image.tsx: the one site-wide
  *                                                               share image, rendered at build
@@ -46,7 +48,7 @@
  */
 
 import { z } from "zod";
-import { FACETS, KINDS, isFacet, type Facet, type Kind } from "../content/schema";
+import { FACETS, KINDS, isFacet, slugSchema, type Facet, type Kind } from "../content/schema";
 
 // Static routes -------------------------------------------------------------
 
@@ -183,4 +185,74 @@ export function parseSearchParam(value: string | readonly string[] | undefined):
   if (value === undefined) return { ok: true, query: "" };
   const parsed = searchValue.safeParse(value);
   return parsed.success ? { ok: true, query: parsed.data.trim() } : { ok: false };
+}
+
+// The index's groups (feat/shell-facets) ------------------------------------
+
+/** The name of the index's tag parameter: `/all?tag=<slug>`. The chip links and the page share it. */
+export const TAG_PARAM = "tag";
+
+export type TagParam =
+  | { readonly ok: true; readonly slug: string | undefined }
+  | { readonly ok: false };
+
+/**
+ * Reads `?tag=` as Next hands it over. Absent or empty means no tag. The value
+ * must be slug-shaped — the shape `tags_slug_format` holds every tag to — so
+ * the parser is closed without knowing which tags exist. Whether any tag has
+ * that slug is the loader's to answer: `loadAll` reports a slug no tag has as
+ * not-found, and the page 404s.
+ * @returns the slug, `undefined` for none, or `ok: false` for a repeated parameter or a value no slug can be (→ 404).
+ */
+export function parseTagParam(value: string | readonly string[] | undefined): TagParam {
+  if (value === undefined || value === "") return { ok: true, slug: undefined };
+  const parsed = slugSchema.safeParse(value);
+  return parsed.success ? { ok: true, slug: parsed.data } : { ok: false };
+}
+
+/**
+ * What narrows the index. One thing at a time (the owner's decision,
+ * handoff/feat-shell-facets.md): a search, a facet or a tag — never two.
+ */
+export type AllFilter =
+  | { readonly kind: "none" }
+  | { readonly kind: "search"; readonly query: string }
+  | { readonly kind: "facet"; readonly facet: Facet }
+  | { readonly kind: "tag"; readonly slug: string };
+
+export type AllParams =
+  | { readonly ok: true; readonly filter: AllFilter }
+  | { readonly ok: false };
+
+/**
+ * Reads `/all`'s three parameters together. Each goes through its own closed
+ * parser, a blank one counts as absent as it does everywhere else, and at most
+ * one may be present.
+ * @returns the one filter, `none` when there is none, or `ok: false` when a value is invalid or two are present (→ 404).
+ */
+export function parseAllParams(params: {
+  readonly q?: string | readonly string[];
+  readonly facet?: string | readonly string[];
+  readonly tag?: string | readonly string[];
+}): AllParams {
+  const search = parseSearchParam(params.q);
+  const facet = parseFacetParam(params.facet);
+  const tag = parseTagParam(params.tag);
+  if (!search.ok || !facet.ok || !tag.ok) return { ok: false };
+  const present: AllFilter[] = [];
+  if (search.query !== "") present.push({ kind: "search", query: search.query });
+  if (facet.facet !== undefined) present.push({ kind: "facet", facet: facet.facet });
+  if (tag.slug !== undefined) present.push({ kind: "tag", slug: tag.slug });
+  if (present.length > 1) return { ok: false };
+  return { ok: true, filter: present[0] ?? { kind: "none" } };
+}
+
+/**
+ * The index, optionally narrowed to one group. A facet value and a tag slug
+ * are both URL-safe by construction, so nothing here needs encoding.
+ * @returns `/all`, `/all?facet=<facet>` or `/all?tag=<slug>`.
+ */
+export function allHref(group?: { readonly facet: Facet } | { readonly tag: string }): string {
+  if (!group) return ALL_HREF;
+  return "facet" in group ? `${ALL_HREF}?facet=${group.facet}` : `${ALL_HREF}?${TAG_PARAM}=${group.tag}`;
 }

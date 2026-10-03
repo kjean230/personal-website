@@ -28,6 +28,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 // Relative, not "@/": this module is also imported by tiles.test.ts, and the
 // Vitest config declares no path alias (lib/**/*.test.ts uses the same style).
+import type { Facet } from "../../lib/content/schema";
 import { SECTIONS } from "../../lib/routes/table";
 
 /**
@@ -121,6 +122,24 @@ export const PROFILE_ICON = read(
 export const ALL_ICON = read(
   readFileSync(join(process.cwd(), "design/assets/icons/all-software.svg"), "utf8"),
 );
+
+/**
+ * The glyph on each facet chip (feat/shell-facets): the six Phase 0 drew for
+ * exactly this, keyed by the facet, with `all` for the chip that clears one.
+ * Shown in Explorer mode only; the stylesheet hides them elsewhere. Tags have
+ * no glyphs — none was drawn, and none is drawn here.
+ *
+ * `satisfies` is the totality check: a sixth facet in `FACETS` fails
+ * `typecheck` on this line until someone says which drawing it gets.
+ */
+export const FACET_ICONS = {
+  all: read(readFileSync(join(process.cwd(), "design/assets/icons/facet-all.svg"), "utf8")),
+  corporate: read(readFileSync(join(process.cwd(), "design/assets/icons/facet-corporate.svg"), "utf8")),
+  research: read(readFileSync(join(process.cwd(), "design/assets/icons/facet-research.svg"), "utf8")),
+  volunteer: read(readFileSync(join(process.cwd(), "design/assets/icons/facet-volunteer.svg"), "utf8")),
+  classroom: read(readFileSync(join(process.cwd(), "design/assets/icons/facet-classroom.svg"), "utf8")),
+  coursework: read(readFileSync(join(process.cwd(), "design/assets/icons/facet-coursework.svg"), "utf8")),
+} as const satisfies Record<Facet | "all", string>;
 
 for (const section of SECTIONS) {
   if (!ICONS[section.segment]) throw new Error(`tiles: section "${section.segment}" has no icon`);

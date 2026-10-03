@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isBackKey, isSkipKey, nextIndex, type KeyLike } from "./keys";
+import { isBackKey, isSkipKey, nextIndex, tabStop, type KeyLike } from "./keys";
 
 // The shell's key rules (brief §2.2: "arrows navigate, Enter = A, Escape = B,
 // roving tabindex"). The DOM wiring lives in the two islands and is covered by
@@ -150,6 +150,57 @@ describe("nextIndex on a grid", () => {
       }
     }
     expect(nextIndex(key("ArrowDown"), TILES - 1, TILES, 1)).toBe(0);
+  });
+});
+
+// Which chip Tab lands on (feat/shell-facets). The owner's rule: the row's
+// current chip when it has one, otherwise its first — never always the first.
+// `current` is the index of the chip carrying aria-current="page", or -1.
+describe("tabStop", () => {
+  it("starts on the current item when the row has one", () => {
+    // /all?facet=research: Research is the third chip of the facet row.
+    expect(tabStop(2, null, 0)).toBe(2);
+    // The bare index: All is current, and it is also first.
+    expect(tabStop(0, null, 0)).toBe(0);
+  });
+
+  it("starts on the first item when the row has no current one", () => {
+    // Under a search, or a tag row while a facet is selected.
+    expect(tabStop(-1, null, 0)).toBe(0);
+  });
+
+  // The rule runs after every render. While the row's current item has not
+  // changed, wherever the arrows or a click left the tab stop is where it stays.
+  it("leaves the tab stop alone while the current item is unchanged", () => {
+    expect(tabStop(2, 2, 4)).toBe(4);
+    expect(tabStop(-1, -1, 3)).toBe(3);
+    expect(tabStop(0, 0, 5)).toBe(5);
+  });
+
+  // A soft navigation keeps the island mounted: following a chip, or Back,
+  // changes the current item under a row that already has a tab stop.
+  it("moves to the new current item when it changes", () => {
+    expect(tabStop(4, 2, 2)).toBe(4);
+    // Back from /all?facet=research to /all: All is current again.
+    expect(tabStop(0, 2, 2)).toBe(0);
+  });
+
+  it("falls back to the first item when the row stops having a current one", () => {
+    // The facet row after a tag is chosen: no facet is current any more.
+    expect(tabStop(-1, 2, 2)).toBe(0);
+    expect(tabStop(-1, 0, 3)).toBe(0);
+  });
+
+  it("gains a current item where it had none", () => {
+    // A tag row after one of its tags is chosen.
+    expect(tabStop(3, -1, 0)).toBe(3);
+  });
+
+  // The home row and the index grid never have a current item, so they keep
+  // starting on their first tile and keep whatever the arrows chose.
+  it("is the old behaviour for a row that never has a current item", () => {
+    expect(tabStop(-1, null, 0)).toBe(0);
+    for (const active of [0, 1, 5, 18]) expect(tabStop(-1, -1, active)).toBe(active);
   });
 });
 

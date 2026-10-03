@@ -70,6 +70,11 @@ export type CertificationCategory = (typeof CERTIFICATION_CATEGORIES)[number];
 const id = z.guid();
 /** Mirrors `entries_slug_format` / `tags_slug_format`. */
 const slug = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "slug must be lowercase words joined by single hyphens");
+/**
+ * The slug shape, for a boundary that receives one from outside the database —
+ * `?tag=<slug>` on `/all` (lib/routes/table.ts). The same schema the rows use.
+ */
+export const slugSchema = slug;
 const isoDate = z.iso.date();
 const timestamp = z.iso.datetime({ offset: true });
 
@@ -237,6 +242,13 @@ export const tagSchema = z.object({
   category: z.enum(TAG_CATEGORIES),
 });
 export type Tag = z.infer<typeof tagSchema>;
+
+/** One `entry_tags` row: an entry carrying a tag. The junction has no columns of its own. */
+export const entryTagSchema = z.object({
+  entry_id: id,
+  tag_id: id,
+});
+export type EntryTag = z.infer<typeof entryTagSchema>;
 
 export const mediaSchema = z.object({
   id,

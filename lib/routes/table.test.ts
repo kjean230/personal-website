@@ -11,9 +11,13 @@ import {
   SEARCH_MAX_LENGTH,
   SEARCH_PARAM,
   SECTIONS,
+  TAG_PARAM,
+  allHref,
   entryHref,
+  parseAllParams,
   parseFacetParam,
   parseSearchParam,
+  parseTagParam,
   sectionForKind,
   sectionFromSegment,
   sectionHref,
@@ -162,5 +166,92 @@ describe("?q=", () => {
   it("rejects a repeated parameter, which a form cannot send", () => {
     expect(parseSearchParam(["a", "b"])).toEqual({ ok: false });
     expect(parseSearchParam(["a"])).toEqual({ ok: false });
+  });
+});
+
+// Groups on the index (feat/shell-facets). The URL contract is the owner's:
+// `/all?facet=<facet>` and `/all?tag=<slug>`, and one thing at a time.
+describe("?tag=", () => {
+  it("is the parameter the tag chips send", () => {
+    expect(TAG_PARAM).toBe("tag");
+  });
+
+  it("reads absent or empty as no tag", () => {
+    expect(parseTagParam(undefined)).toEqual({ ok: true, slug: undefined });
+    expect(parseTagParam("")).toEqual({ ok: true, slug: undefined });
+  });
+
+  it("accepts anything slug-shaped, whether or not a tag has it", () => {
+    for (const slug of ["python", "data-modeling", "a", "k8s", "c-2"]) {
+      expect(parseTagParam(slug), slug).toEqual({ ok: true, slug });
+    }
+  });
+
+  // The shape `tags_slug_format` holds every tag to. Nothing else can be a
+  // tag's slug, so nothing else is let through to be looked up.
+  it("rejects a value no slug can be, and a repeated parameter", () => {
+    for (const value of ["Python", "data modeling", "-python", "python-", "a--b", "a_b", "a/b", "%", "a,b", "*", " "]) {
+      expect(parseTagParam(value), JSON.stringify(value)).toEqual({ ok: false });
+    }
+    expect(parseTagParam(["python", "sql"])).toEqual({ ok: false });
+    expect(parseTagParam(["python"])).toEqual({ ok: false });
+  });
+});
+
+describe("/all's parameters, together", () => {
+  it("reads none of them as the whole index", () => {
+    expect(parseAllParams({})).toEqual({ ok: true, filter: { kind: "none" } });
+  });
+
+  it("reads each one alone as that filter", () => {
+    expect(parseAllParams({ q: " machine learning " })).toEqual({
+      ok: true,
+      filter: { kind: "search", query: "machine learning" },
+    });
+    expect(parseAllParams({ facet: "research" })).toEqual({ ok: true, filter: { kind: "facet", facet: "research" } });
+    expect(parseAllParams({ tag: "python" })).toEqual({ ok: true, filter: { kind: "tag", slug: "python" } });
+  });
+
+  // A blank value is an absent one, as ?q= and ?facet= have always read it —
+  // which is what lets an empty search box be submitted beside nothing else.
+  it("treats a blank parameter as absent, alone or beside another", () => {
+    expect(parseAllParams({ q: "", facet: "", tag: "" })).toEqual({ ok: true, filter: { kind: "none" } });
+    expect(parseAllParams({ q: "   ", facet: "research" })).toEqual({
+      ok: true,
+      filter: { kind: "facet", facet: "research" },
+    });
+    expect(parseAllParams({ q: "sql", tag: "" })).toEqual({ ok: true, filter: { kind: "search", query: "sql" } });
+  });
+
+  // One at a time: a URL carrying two is a 404, whichever two.
+  it("rejects every pair, and all three", () => {
+    expect(parseAllParams({ q: "sql", facet: "research" })).toEqual({ ok: false });
+    expect(parseAllParams({ q: "sql", tag: "python" })).toEqual({ ok: false });
+    expect(parseAllParams({ facet: "research", tag: "python" })).toEqual({ ok: false });
+    expect(parseAllParams({ q: "sql", facet: "research", tag: "python" })).toEqual({ ok: false });
+  });
+
+  it("rejects an invalid or repeated value, even beside a valid one", () => {
+    expect(parseAllParams({ facet: "bogus" })).toEqual({ ok: false });
+    expect(parseAllParams({ tag: "Not A Slug" })).toEqual({ ok: false });
+    expect(parseAllParams({ q: "a".repeat(SEARCH_MAX_LENGTH + 1) })).toEqual({ ok: false });
+    expect(parseAllParams({ facet: ["research", "corporate"] })).toEqual({ ok: false });
+    expect(parseAllParams({ tag: ["python"] })).toEqual({ ok: false });
+    expect(parseAllParams({ q: ["a", "b"] })).toEqual({ ok: false });
+    // An invalid value is not excused by being blank-adjacent.
+    expect(parseAllParams({ q: "", facet: "bogus" })).toEqual({ ok: false });
+  });
+
+  it("builds the URLs it reads", () => {
+    expect(allHref()).toBe(ALL_HREF);
+    expect(allHref({ facet: "research" })).toBe("/all?facet=research");
+    expect(allHref({ tag: "data-modeling" })).toBe("/all?tag=data-modeling");
+    for (const facet of FACETS) {
+      const href = allHref({ facet });
+      expect(parseAllParams({ facet: new URL(href, "https://x.test").searchParams.get("facet") ?? undefined })).toEqual({
+        ok: true,
+        filter: { kind: "facet", facet },
+      });
+    }
   });
 });

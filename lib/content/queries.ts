@@ -1,7 +1,7 @@
 /**
  * lib/content/queries.ts — the query layer (S4, BUILD_PLAN §4): tile row,
- * detail, facet counts, relation traversal, and every link at once (S6, for
- * `/resume`).
+ * detail, facet counts, relation traversal, every link at once (S6, for
+ * `/resume`), and every tag with its entries (feat/shell-facets, for `/all`).
  *
  * These are the shapes S5 (route table), S6 (recruiter render), S7 (console
  * tile) and S8 (trophy case) build on. Every function reads through the anon
@@ -24,6 +24,7 @@ import {
   ContentValidationError,
   FACETS,
   TILE_SELECT,
+  entryTagSchema,
   isFacet,
   linkSchema,
   mediaSchema,
@@ -284,6 +285,46 @@ export async function listLinks(client: ContentClient = getAnonClient()): Promis
     await client.from("links").select("*", { count: "exact" }).order("entry_id").order("label"),
   );
   return rows.map((row) => parseRow(linkSchema, "link", row));
+}
+
+// Tags ----------------------------------------------------------------------
+
+/** One tag and the entries that carry it. */
+export interface TagGroup {
+  readonly tag: Tag;
+  /** The ids of the entries carrying the tag; empty when none does. */
+  readonly entryIds: readonly string[];
+}
+
+/**
+ * Every tag with the entries that carry it (feat/shell-facets; brief §5's
+ * "Groups — tag and facet browsing"). `getEntryBySlug` already embeds one
+ * entry's own tags; this exists so the index can count and narrow by tag
+ * without one detail request per entry.
+ *
+ * Two flat reads — `tags` and the `entry_tags` junction — rather than one
+ * embed. `complete()` can prove a top-level list whole, and the junction is
+ * exactly the list a chip's count has to be right about; an embedded array
+ * offers no such check. The pairing is done here, in code, as the facet counts
+ * are.
+ * @returns every tag, including one no entry carries, ordered by slug.
+ */
+export async function listTagGroups(client: ContentClient = getAnonClient()): Promise<TagGroup[]> {
+  const [tags, pairs] = await Promise.all([
+    client.from("tags").select("*", { count: "exact" }).order("slug"),
+    client.from("entry_tags").select("entry_id,tag_id", { count: "exact" }).order("entry_id").order("tag_id"),
+  ]);
+  const entryIds = new Map<string, string[]>();
+  for (const row of complete("listTagGroups(entry_tags)", pairs)) {
+    const pair = parseRow(entryTagSchema, "entry tag", row);
+    const ids = entryIds.get(pair.tag_id);
+    if (ids) ids.push(pair.entry_id);
+    else entryIds.set(pair.tag_id, [pair.entry_id]);
+  }
+  return complete("listTagGroups(tags)", tags).map((row) => {
+    const tag = parseRow(tagSchema, "tag", row);
+    return { tag, entryIds: entryIds.get(tag.id) ?? [] };
+  });
 }
 
 // Trophy case ---------------------------------------------------------------
