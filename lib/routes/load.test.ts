@@ -1,8 +1,31 @@
 import { describe, expect, it, vi } from "vitest";
-import { ContentQueryError, type EntryDetail, type FacetCounts, type Trophy } from "../content/queries";
-import { FACETS, KINDS, type EntrySummary, type Facet, type Kind, type Link } from "../content/schema";
+import {
+  ContentQueryError,
+  type EntryDetail,
+  type FacetCounts,
+  type TagGroup,
+  type Trophy,
+} from "../content/queries";
+import {
+  FACETS,
+  KINDS,
+  type EntrySummary,
+  type Facet,
+  type Kind,
+  type Link,
+  type TagCategory,
+} from "../content/schema";
 import { loadAll, loadEntry, loadResume, loadSection, loadSitemap, loadTrophies, type RouteQueries } from "./load";
-import { ADMIN_HREF, ALL_HREF, PRIVACY_HREF, SECTIONS, entryHref, sectionFromSegment, sectionHref } from "./table";
+import {
+  ADMIN_HREF,
+  ALL_HREF,
+  PRIVACY_HREF,
+  SECTIONS,
+  entryHref,
+  sectionFromSegment,
+  sectionHref,
+  type AllFilter,
+} from "./table";
 
 // The loaders bind URLs to the S4 query contract. Every query here is a fake
 // (no network, no environment): the tests pin what a page receives for each
@@ -68,6 +91,7 @@ describe("loadSection", () => {
       getEntryBySlug: unused,
       listTrophies: unused,
       listLinks: unused,
+      listTagGroups: unused,
     };
     const page = await loadSection(section("experience"), undefined, queries);
     expect(queries.listSection).toHaveBeenCalledWith("experience", { facet: undefined });
@@ -88,6 +112,7 @@ describe("loadSection", () => {
       getEntryBySlug: unused,
       listTrophies: unused,
       listLinks: unused,
+      listTagGroups: unused,
     };
     const page = await loadSection(section("experience"), "research", queries);
     expect(queries.listSection).toHaveBeenCalledWith("experience", { facet: "research" });
@@ -107,6 +132,7 @@ describe("loadSection", () => {
       getEntryBySlug: unused,
       listTrophies: unused,
       listLinks: unused,
+      listTagGroups: unused,
     };
     const page = await loadSection(section("now"), undefined, queries);
     expect(page.entries).toEqual([]);
@@ -123,6 +149,7 @@ describe("loadSection", () => {
       getEntryBySlug: unused,
       listTrophies: unused,
       listLinks: unused,
+      listTagGroups: unused,
     };
     const page = await loadSection(section("hobbies"), undefined, queries);
     expect(page.entries.map((row) => row.slug)).toEqual(["music", "knicks", "basketball"]);
@@ -141,6 +168,7 @@ describe("loadSection", () => {
       getEntryBySlug: unused,
       listTrophies: vi.fn(async () => [award, cert]),
       listLinks: unused,
+      listTagGroups: unused,
     };
     const all = await loadSection(section("certifications"), undefined, queries);
     expect(all.entries).toEqual([award, cert]);
@@ -169,6 +197,7 @@ describe("loadSection", () => {
       getEntryBySlug: unused,
       listTrophies: unused,
       listLinks: unused,
+      listTagGroups: unused,
     };
     await expect(loadSection(section("experience"), undefined, queries)).rejects.toBe(failure);
   });
@@ -185,6 +214,7 @@ describe("loadEntry", () => {
     getEntryBySlug: vi.fn(async () => detail),
     listTrophies: unused,
     listLinks: unused,
+    listTagGroups: unused,
   });
 
   it("is not-found when no entry has the slug", async () => {
@@ -238,40 +268,51 @@ describe("loadEntry", () => {
 });
 
 // `/all` — brief §5's "full searchable index of every entry"
-// (feat/shell-tile-grid). The search contract is the owner's: title, subtitle
+// (feat/shell-tile-grid) and "Groups — tag and facet browsing"
+// (feat/shell-facets). Both contracts are the owner's. Search: title, subtitle
 // and summary; case-insensitive; every word must appear; nothing is ranked.
+// Groups: one thing narrows the index at a time; a facet narrows across every
+// kind; a chip exists only for a group that has entries.
 describe("loadAll", () => {
+  const id = (n: number) => `00000000-0000-4000-8000-00000000000${n}`;
   const btt = tile({
+    id: id(1),
     kind: "experience",
     slug: "break-through-tech",
+    facet: "research",
     title: "AI Fellow",
     subtitle: "Break Through Tech",
     summary: "A year of machine learning coursework and an industry project.",
     featured: true,
   });
   const guardian = tile({
+    id: id(2),
     kind: "experience",
     slug: "guardian",
+    facet: "corporate",
     title: "Data Engineering Intern",
     subtitle: "Guardian",
     start_date: "2025-06-01",
   });
   const classifier = tile({
+    id: id(3),
     kind: "project",
     slug: "superhost-classifier",
+    facet: "research",
     title: "Superhost classifier",
     summary: "Predicts host status from listing data.",
     start_date: "2024-09-01",
   });
   const cert = tile({
+    id: id(4),
     kind: "certification",
     slug: "ml-foundations",
     title: "Machine Learning Foundations",
     subtitle: "eCornell",
     start_date: "2024-08-01",
   });
-  const degree = tile({ kind: "education", slug: "degree", title: "B.S. Computer Science", sort_weight: 5 });
-  const team = tile({ kind: "interest", slug: "team", title: "A followed team" });
+  const degree = tile({ id: id(5), kind: "education", slug: "degree", title: "B.S. Computer Science", sort_weight: 5 });
+  const team = tile({ id: id(6), kind: "interest", slug: "team", title: "A followed team" });
   const byKind: Record<Kind, EntrySummary[]> = {
     experience: [btt, guardian],
     project: [classifier],
@@ -281,43 +322,70 @@ describe("loadAll", () => {
     interest: [team],
     post: [],
   };
+
+  const group = (
+    slug: string,
+    label: string,
+    category: TagCategory,
+    entries: readonly EntrySummary[],
+    extraIds: readonly string[] = [],
+  ): TagGroup => ({
+    tag: { id: `tag:${slug}`, slug, label, category },
+    entryIds: [...entries.map((entry) => entry.id), ...extraIds],
+  });
+  // Deliberately out of order, and with every case the chips have to handle:
+  // a lower-case label, a tag no entry carries, a tag whose only entry is not
+  // in the index, and a team tag.
+  const groups: TagGroup[] = [
+    group("sql", "SQL", "skill", [btt, guardian, classifier]),
+    group("home-team", "Home team", "team", [team]),
+    group("insurance", "Insurance", "domain", []),
+    group("python", "Python", "tool", [btt, classifier]),
+    group("spark", "Spark", "tool", [], [id(9)]),
+    group("data-modeling", "data modeling", "skill", [guardian]),
+  ];
+
   const queries = (): RouteQueries => ({
     listSection: vi.fn(async (kind: Kind) => byKind[kind]),
     getFacetCounts: unused,
     getEntryBySlug: unused,
     listTrophies: unused,
     listLinks: unused,
+    listTagGroups: vi.fn(async () => groups),
   });
-  const slugs = async (query: string) => (await loadAll(query, queries())).entries.map((entry) => entry.slug);
+  const load = async (filter: AllFilter, fake: RouteQueries = queries()) => {
+    const result = await loadAll(filter, fake);
+    if (result.kind !== "found") throw new Error("expected the index to be found");
+    return result.page;
+  };
+  const NONE: AllFilter = { kind: "none" };
+  const search = (query: string): AllFilter => ({ kind: "search", query });
+  const slugs = async (filter: AllFilter) => (await load(filter)).entries.map((entry) => entry.slug);
+  const EVERY = ["break-through-tech", "degree", "guardian", "superhost-classifier", "ml-foundations", "team"];
 
   it("lists every entry of every kind once, in tile order across kinds", async () => {
-    const page = await loadAll("", queries());
+    const page = await load(NONE);
     // featured, then owner weight, then most recent start, then title — the
     // order a section uses, applied to the whole site.
-    expect(page.entries.map((entry) => entry.slug)).toEqual([
-      "break-through-tech",
-      "degree",
-      "guardian",
-      "superhost-classifier",
-      "ml-foundations",
-      "team",
-    ]);
+    expect(page.entries.map((entry) => entry.slug)).toEqual(EVERY);
     expect(page.total).toBe(6);
-    expect(page.query).toBe("");
-    expect(new Set(page.entries.map((entry) => entry.id + entry.slug)).size).toBe(page.entries.length);
+    expect(page.filter).toEqual(NONE);
+    expect(new Set(page.entries.map((entry) => entry.id)).size).toBe(page.entries.length);
   });
 
-  it("reads each kind once, through the route table, and nothing else", async () => {
+  it("reads each kind once and the tags once, through the route table, and nothing else", async () => {
     const fake = queries();
-    await loadAll("guardian", fake);
+    await loadAll(search("guardian"), fake);
     expect(fake.listSection).toHaveBeenCalledTimes(KINDS.length);
     expect(new Set(vi.mocked(fake.listSection).mock.calls.map(([kind]) => kind))).toEqual(new Set(KINDS));
-    // The search never reaches the query layer: every call is the plain list.
+    // No filter ever reaches the query layer: every call is the plain list.
     for (const [, options] of vi.mocked(fake.listSection).mock.calls) expect(options).toEqual({});
+    expect(fake.listTagGroups).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(fake.listTagGroups).mock.calls[0]).toEqual([]);
   });
 
   it("gives every result a real URL from the route table", async () => {
-    const page = await loadAll("", queries());
+    const page = await load(NONE);
     expect(page.entries.map((entry) => entryHref(entry))).toEqual([
       "/experience/break-through-tech",
       "/education/degree",
@@ -328,76 +396,205 @@ describe("loadAll", () => {
     ]);
   });
 
-  it("matches the title, the subtitle and the summary", async () => {
-    expect(await slugs("fellow")).toEqual(["break-through-tech"]);
-    expect(await slugs("ecornell")).toEqual(["ml-foundations"]);
-    expect(await slugs("listing")).toEqual(["superhost-classifier"]);
+  describe("search", () => {
+    it("matches the title, the subtitle and the summary", async () => {
+      expect(await slugs(search("fellow"))).toEqual(["break-through-tech"]);
+      expect(await slugs(search("ecornell"))).toEqual(["ml-foundations"]);
+      expect(await slugs(search("listing"))).toEqual(["superhost-classifier"]);
+    });
+
+    it("ignores case, in the search and in the entry", async () => {
+      expect(await slugs(search("GUARDIAN"))).toEqual(["guardian"]);
+      expect(await slugs(search("break through TECH"))).toEqual(["break-through-tech"]);
+    });
+
+    it("requires every word, wherever each one appears", async () => {
+      // "machine" is in two entries; "foundations" in one of them.
+      expect(await slugs(search("machine"))).toEqual(["break-through-tech", "ml-foundations"]);
+      expect(await slugs(search("machine foundations"))).toEqual(["ml-foundations"]);
+      // One word from the title, one from the summary.
+      expect(await slugs(search("fellow industry"))).toEqual(["break-through-tech"]);
+      expect(await slugs(search("machine guardian"))).toEqual([]);
+    });
+
+    it("matches part of a word", async () => {
+      expect(await slugs(search("class"))).toEqual(["superhost-classifier"]);
+    });
+
+    // Not the slug, the kind, the section name or the facet — and, by the
+    // owner's decision for feat/shell-facets, not the tags either. A tag is
+    // found through its chip.
+    it("matches nothing outside those three fields, tags included", async () => {
+      expect(await slugs(search("superhost-classifier"))).toEqual([]);
+      expect(await slugs(search("certification"))).toEqual([]);
+      expect(await slugs(search("hobbies"))).toEqual([]);
+      expect(await slugs(search("research"))).toEqual([]);
+      expect(await slugs(search("python"))).toEqual([]);
+      expect(await slugs(search("sql"))).toEqual([]);
+    });
+
+    it("keeps a match in its place rather than ranking it", async () => {
+      // "e" is in all six; the order is the unsearched order.
+      expect(await slugs(search("e"))).toEqual(EVERY);
+    });
+
+    it("returns no rows, and still the total, when nothing matches", async () => {
+      const page = await load(search("zzz"));
+      expect(page.entries).toEqual([]);
+      expect(page.total).toBe(6);
+      expect(page.filter).toEqual(search("zzz"));
+    });
+
+    it("treats characters with a meaning elsewhere as plain text", async () => {
+      for (const query of ["%", "_", ".*", "(", "a,b", "\\"]) expect(await slugs(search(query)), query).toEqual([]);
+      expect(await slugs(search("b.s."))).toEqual(["degree"]);
+    });
+
+    it("leaves every chip in place and marks none of them current", async () => {
+      const page = await load(search("machine"));
+      expect(page.facets).toEqual((await load(NONE)).facets.map((chip) => ({ ...chip, active: false })));
+      expect(page.tags.flatMap((row) => row.chips).some((chip) => chip.active)).toBe(false);
+    });
   });
 
-  it("ignores case, in the search and in the entry", async () => {
-    expect(await slugs("GUARDIAN")).toEqual(["guardian"]);
-    expect(await slugs("break through TECH")).toEqual(["break-through-tech"]);
+  describe("facet chips", () => {
+    it("are All plus every facet an entry has, counted across kinds, in FACETS order", async () => {
+      const page = await load(NONE);
+      // Research is one experience and one project: a count no section page shows.
+      expect(page.facets).toEqual([
+        { facet: null, label: "All", count: 6, href: "/all", active: true },
+        { facet: "corporate", label: "Corporate", count: 1, href: "/all?facet=corporate", active: false },
+        { facet: "research", label: "Research", count: 2, href: "/all?facet=research", active: false },
+      ]);
+    });
+
+    it("narrow the index across every kind, in tile order, and mark that chip current", async () => {
+      const page = await load({ kind: "facet", facet: "research" });
+      expect(page.entries.map((entry) => entry.slug)).toEqual(["break-through-tech", "superhost-classifier"]);
+      expect(page.total).toBe(6);
+      expect(page.facets.map((chip) => [chip.facet, chip.active])).toEqual([
+        [null, false],
+        ["corporate", false],
+        ["research", true],
+      ]);
+    });
+
+    it("are empty, not an error, for a facet no entry has", async () => {
+      const page = await load({ kind: "facet", facet: "volunteer" });
+      expect(page.entries).toEqual([]);
+      expect(page.facets.some((chip) => chip.active)).toBe(false);
+    });
   });
 
-  it("requires every word, wherever each one appears", async () => {
-    // "machine" is in two entries; "foundations" in one of them.
-    expect(await slugs("machine")).toEqual(["break-through-tech", "ml-foundations"]);
-    expect(await slugs("machine foundations")).toEqual(["ml-foundations"]);
-    // One word from the title, one from the summary.
-    expect(await slugs("fellow industry")).toEqual(["break-through-tech"]);
-    expect(await slugs("machine guardian")).toEqual([]);
-  });
+  describe("tag chips", () => {
+    it("are grouped by category in TAG_CATEGORIES order, A to Z by label whatever its case", async () => {
+      const page = await load(NONE);
+      expect(page.tags.map((row) => [row.category, row.chips.map((chip) => chip.label)])).toEqual([
+        ["skill", ["data modeling", "SQL"]],
+        ["tool", ["Python"]],
+        ["team", ["Home team"]],
+      ]);
+    });
 
-  it("matches part of a word", async () => {
-    expect(await slugs("class")).toEqual(["superhost-classifier"]);
-  });
+    it("carry the number of entries the chip leads to, and a real URL", async () => {
+      const page = await load(NONE);
+      expect(page.tags.flatMap((row) => row.chips)).toEqual([
+        { slug: "data-modeling", label: "data modeling", count: 1, href: "/all?tag=data-modeling", active: false },
+        { slug: "sql", label: "SQL", count: 3, href: "/all?tag=sql", active: false },
+        { slug: "python", label: "Python", count: 2, href: "/all?tag=python", active: false },
+        { slug: "home-team", label: "Home team", count: 1, href: "/all?tag=home-team", active: false },
+      ]);
+      for (const chip of page.tags.flatMap((row) => row.chips)) {
+        expect((await load({ kind: "tag", slug: chip.slug })).entries).toHaveLength(chip.count);
+      }
+    });
 
-  // Not the slug, the kind, the section name or the facet: none of them is
-  // one of the three fields, and a row matching on text it does not show
-  // would be a match the visitor cannot see.
-  it("matches nothing outside those three fields", async () => {
-    expect(await slugs("superhost-classifier")).toEqual([]);
-    expect(await slugs("certification")).toEqual([]);
-    expect(await slugs("hobbies")).toEqual([]);
-  });
+    // The zero-count rule facets follow: a tag no entry carries has no chip,
+    // and a category left with no chips has no row.
+    it("leave out a tag with no entries, and a category with no tags to show", async () => {
+      const page = await load(NONE);
+      const shown = page.tags.flatMap((row) => row.chips.map((chip) => chip.slug));
+      expect(shown).not.toContain("insurance");
+      expect(page.tags.map((row) => row.category)).not.toContain("domain");
+    });
 
-  it("keeps a match in its place rather than ranking it", async () => {
-    // "e" is in all six; the order is the unsearched order.
-    expect(await slugs("e")).toEqual(await slugs(""));
-  });
+    it("count only entries the index lists", async () => {
+      const page = await load(NONE);
+      expect(page.tags.flatMap((row) => row.chips.map((chip) => chip.slug))).not.toContain("spark");
+    });
 
-  it("returns no rows, and still the total, when nothing matches", async () => {
-    const page = await loadAll("zzz", queries());
-    expect(page.entries).toEqual([]);
-    expect(page.total).toBe(6);
-    expect(page.query).toBe("zzz");
-  });
+    // Owner's decision: Teams is a category like the others.
+    it("treat a team tag like any other", async () => {
+      const page = await load({ kind: "tag", slug: "home-team" });
+      expect(page.entries.map((entry) => entry.slug)).toEqual(["team"]);
+      expect(page.tags.find((row) => row.category === "team")?.chips[0].active).toBe(true);
+    });
 
-  it("treats characters with a meaning elsewhere as plain text", async () => {
-    for (const query of ["%", "_", ".*", "(", "a,b", "\\"]) expect(await slugs(query), query).toEqual([]);
-    expect(await slugs("b.s.")).toEqual(["degree"]);
+    it("narrow the index to the entries carrying the tag, in tile order, and mark that chip current", async () => {
+      const page = await load({ kind: "tag", slug: "sql" });
+      expect(page.entries.map((entry) => entry.slug)).toEqual(["break-through-tech", "guardian", "superhost-classifier"]);
+      expect(page.total).toBe(6);
+      const chips = page.tags.flatMap((row) => row.chips);
+      expect(chips.filter((chip) => chip.active).map((chip) => chip.slug)).toEqual(["sql"]);
+      // One group at a time: no facet is current while a tag is, All included.
+      expect(page.facets.some((chip) => chip.active)).toBe(false);
+    });
+
+    it("are empty, not an error, for a tag that exists and has no entries", async () => {
+      const page = await load({ kind: "tag", slug: "insurance" });
+      expect(page.entries).toEqual([]);
+      expect(page.tags.flatMap((row) => row.chips).some((chip) => chip.active)).toBe(false);
+    });
+
+    it("are not-found for a slug no tag has", async () => {
+      expect(await loadAll({ kind: "tag", slug: "nope" }, queries())).toEqual({ kind: "not-found" });
+      // A facet's name is not a tag's slug.
+      expect(await loadAll({ kind: "tag", slug: "research" }, queries())).toEqual({ kind: "not-found" });
+    });
+
+    it("are absent altogether when no entry is tagged, as on the hosted site today", async () => {
+      const page = await load(NONE, { ...queries(), listTagGroups: async () => [] });
+      expect(page.tags).toEqual([]);
+      expect(page.facets).toHaveLength(3);
+    });
   });
 
   it("is empty, not an error, when the site has no entries", async () => {
-    const empty: RouteQueries = { ...queries(), listSection: async () => [] };
-    expect(await loadAll("", empty)).toEqual({ query: "", total: 0, entries: [] });
+    const empty: RouteQueries = { ...queries(), listSection: async () => [], listTagGroups: async () => [] };
+    expect(await loadAll(NONE, empty)).toEqual({
+      kind: "found",
+      page: {
+        filter: NONE,
+        total: 0,
+        entries: [],
+        facets: [{ facet: null, label: "All", count: 0, href: "/all", active: true }],
+        tags: [],
+      },
+    });
   });
 
-  it("lets a query error through untouched", async () => {
+  it("lets a query error through untouched, from the lists and from the tags", async () => {
     const failure = new ContentQueryError("listSection(project)", {
       message: "boom",
       code: "500",
       details: "",
       hint: "",
     });
-    const fake: RouteQueries = {
+    const lists: RouteQueries = {
       ...queries(),
       listSection: async (kind: Kind) => {
         if (kind === "project") throw failure;
         return byKind[kind];
       },
     };
-    await expect(loadAll("", fake)).rejects.toBe(failure);
+    await expect(loadAll(NONE, lists)).rejects.toBe(failure);
+    const tags: RouteQueries = {
+      ...queries(),
+      listTagGroups: async () => {
+        throw failure;
+      },
+    };
+    await expect(loadAll(NONE, tags)).rejects.toBe(failure);
   });
 });
 
@@ -429,6 +626,7 @@ describe("loadResume", () => {
     getEntryBySlug: unused,
     listTrophies: vi.fn(async () => [cert]),
     listLinks: vi.fn(async () => links),
+    listTagGroups: unused,
   });
 
   it("lists the four sections in resume order, reading the trophy case for the last", async () => {
@@ -506,6 +704,7 @@ describe("loadSitemap", () => {
     getEntryBySlug: unused,
     listTrophies: unused,
     listLinks: unused,
+    listTagGroups: unused,
   });
 
   it("lists /, /resume, /all, then every section followed by its entries in tile order", async () => {

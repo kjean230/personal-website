@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { STATUSES } from "../../lib/content/schema";
+import { FACETS, STATUSES } from "../../lib/content/schema";
 import { SECTIONS } from "../../lib/routes/table";
-import { ALL_ICON, HINT_ICONS, PROFILE_ICON, TILE_ICONS, TROPHY_ICONS, inlineIcon, tileIcon } from "./tiles";
+import {
+  ALL_ICON,
+  FACET_ICONS,
+  HINT_ICONS,
+  PROFILE_ICON,
+  TILE_ICONS,
+  TROPHY_ICONS,
+  inlineIcon,
+  tileIcon,
+} from "./tiles";
 
 // The icon set lives only in design/assets/icons/. Two things can rot here
 // without anyone noticing, and both are pinned below: a section gaining no
@@ -121,7 +130,14 @@ describe("TROPHY_ICONS", () => {
 });
 
 describe("every inlined icon", () => {
-  const all = [...TILE_ICONS.values(), HINT_ICONS.a, HINT_ICONS.b, PROFILE_ICON, ALL_ICON];
+  const all = [
+    ...TILE_ICONS.values(),
+    HINT_ICONS.a,
+    HINT_ICONS.b,
+    PROFILE_ICON,
+    ALL_ICON,
+    ...Object.values(FACET_ICONS),
+  ];
 
   it("is decorative and free of ids", () => {
     for (const svg of all) {
@@ -146,6 +162,15 @@ describe("every inlined icon", () => {
   it("gives the index a glyph that is none of the section drawings", () => {
     expect(ALL_ICON).toMatch(/^<svg\b/);
     expect([...TILE_ICONS.values()]).not.toContain(ALL_ICON);
+  });
+
+  // feat/shell-facets: one glyph per facet chip, plus one for the All chip.
+  // A sixth facet with no drawing fails `typecheck` in tiles.ts; this is the
+  // same check at runtime, and the check that no two chips share a glyph.
+  it("gives every facet, and All, a drawing of its own", () => {
+    expect(Object.keys(FACET_ICONS).sort()).toEqual(["all", ...FACETS].sort());
+    expect(new Set(Object.values(FACET_ICONS)).size).toBe(FACETS.length + 1);
+    for (const svg of Object.values(FACET_ICONS)) expect(svg).toMatch(/^<svg\b/);
   });
 
   it("provides both button hint glyphs", () => {

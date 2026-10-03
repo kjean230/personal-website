@@ -32,11 +32,22 @@
  * entry, like every section page. And Up/Down move a whole row, by the column
  * count the grid has as laid out. The home row keeps S7's behaviour in every
  * mode.
+ *
+ * `explorerOnly` (feat/shell-facets) is a row of chips — the facet and tag
+ * chips of Groups, brief §4.2's "arrow-key traversable". It is Explorer
+ * furniture like the grid, but a row like the home row: one tab stop, arrows
+ * step and wrap. Outside Explorer mode the chips stay what the server sent,
+ * ordinary links with a tab stop each.
+ *
+ * Which item holds the tab stop is `tabStop` in keys.ts: the row's current
+ * item (`aria-current="page"`) when it has one, otherwise its first. Only a
+ * chip row ever has a current item, so the home row and the grid still start
+ * on their first tile.
  */
 
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { isExplorer } from "./boot";
-import { nextIndex } from "./keys";
+import { nextIndex, tabStop } from "./keys";
 import styles from "./explorer.module.css";
 
 /** The tile a link belongs to: its list item, which is the card on a grid. */
@@ -58,14 +69,32 @@ interface TileRowProps {
   readonly className?: string;
   /** True for the index grid. */
   readonly grid?: boolean;
+  /** True for a row of chips: a row, not a grid, and Explorer furniture all the same. */
+  readonly explorerOnly?: boolean;
+  /** The list's accessible name, where nothing around it already gives it one. */
+  readonly label?: string;
+  /** The id of a visible label that names the list; used instead of `label` when there is one. */
+  readonly labelledBy?: string;
 }
 
-export function TileRow({ children, className = styles.tiles, grid = false }: TileRowProps) {
+export function TileRow({
+  children,
+  className = styles.tiles,
+  grid = false,
+  explorerOnly = false,
+  label,
+  labelledBy,
+}: TileRowProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const activeRef = useRef(0);
+  /** The row's current item as `applyRoving` last saw it; `null` until it has run. */
+  const seenRef = useRef<number | null>(null);
 
   /** Whether this list is under the island's control right now. Read on use: the mode is the document's, not React's. */
-  const enabled = useCallback(() => !grid || isExplorer(document.documentElement), [grid]);
+  const enabled = useCallback(
+    () => !(grid || explorerOnly) || isExplorer(document.documentElement),
+    [grid, explorerOnly],
+  );
 
   /** The row's tiles, in document order. `[data-tile]` so a nested link can never join the row. */
   const tiles = useCallback(
@@ -78,6 +107,9 @@ export function TileRow({ children, className = styles.tiles, grid = false }: Ti
   const applyRoving = useCallback(() => {
     const items = tiles();
     if (items.length === 0 || !enabled()) return;
+    const current = items.findIndex((item) => item.getAttribute("aria-current") === "page");
+    activeRef.current = tabStop(current, seenRef.current, activeRef.current);
+    seenRef.current = current;
     if (activeRef.current >= items.length) activeRef.current = 0;
     for (const [index, tile] of items.entries()) {
       tile.tabIndex = index === activeRef.current ? 0 : -1;
@@ -133,7 +165,14 @@ export function TileRow({ children, className = styles.tiles, grid = false }: Ti
   }
 
   return (
-    <ul ref={listRef} className={className} onFocus={handleFocus} onKeyDown={handleKeyDown}>
+    <ul
+      ref={listRef}
+      className={className}
+      aria-label={label}
+      aria-labelledby={labelledBy}
+      onFocus={handleFocus}
+      onKeyDown={handleKeyDown}
+    >
       {children}
     </ul>
   );

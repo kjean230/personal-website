@@ -11,6 +11,7 @@ import {
   sectionHref,
 } from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
+import { FacetChips } from "../(explorer)/groups";
 import { KeyHints } from "../(explorer)/key-hints";
 import { TrophyState } from "../(explorer)/trophy";
 import { EntryDates } from "../entry-dates";
@@ -33,6 +34,11 @@ import styles from "../site.module.css";
 // (`(explorer)/trophy.tsx`). Nothing else about the row moves — same `<li>`,
 // same `data-status`, same href — because the recruiter index and the trophy
 // case are deliberately one markup, not two renderings to keep in sync.
+//
+// feat/shell-facets renders the chips through `<FacetChips>`: the same list,
+// classes, hrefs and text, plus what Explorer mode adds to them — the arrow
+// keys of brief §4.2 and each facet's glyph. Outside Explorer mode both are
+// inert and hidden, so the recruiter page is the one S6 shipped.
 //
 // Canonical (feat/recruiter-seo): always the bare section URL. A `?facet=`
 // view is a subset of the section's own list, not a page of its own, so every
@@ -62,19 +68,7 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
     <main id="main" className={styles.main}>
       <h1 className={styles.heading}>{section.label}</h1>
       <nav aria-label="Facets" className={styles.chips}>
-        <ul className={styles.chipList}>
-          {page.chips.map((chip) => (
-            <li key={chip.facet ?? "all"}>
-              <Link
-                href={chip.href}
-                className={styles.chip}
-                aria-current={chip.active ? "page" : undefined}
-              >
-                {chip.label} ({chip.count})
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <FacetChips chips={page.chips} />
       </nav>
       {page.entries.length === 0 ? (
         <p className={styles.note}>Nothing here yet.</p>

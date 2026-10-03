@@ -11,7 +11,8 @@
  * discriminated results and the page files map them to `notFound()` /
  * `permanentRedirect()`, so the loaders are unit-testable with fake queries
  * and the same functions serve both renderers. `loadAll` for `/all` reads the
- * same lists as the sitemap and narrows them in code.
+ * same lists as the sitemap, plus every tag (`listTagGroups`), and narrows
+ * them in code.
  *
  * Errors are never swallowed: a `ContentQueryError` or
  * `ContentValidationError` from the query layer propagates and fails the
@@ -24,27 +25,30 @@ import {
   getFacetCounts,
   listLinks,
   listSection,
+  listTagGroups,
   listTrophies,
   type EntryDetail,
   type Trophy,
 } from "../content/queries";
-import type { EntrySummary, Facet, Link } from "../content/schema";
+import { TAG_CATEGORIES, type EntrySummary, type Facet, type Link, type Tag, type TagCategory } from "../content/schema";
 import {
   ALL_HREF,
   FACET_ORDER,
   HOME_HREF,
   RESUME_HREF,
   SECTIONS,
+  allHref,
   entryHref,
   sectionForKind,
   sectionHref,
+  type AllFilter,
   type Section,
 } from "./table";
 
 /** The queries a loader may call. Typed against the S4 module so a contract change fails `tsc` here. */
 export type RouteQueries = Pick<
   typeof import("../content/queries"),
-  "listSection" | "getFacetCounts" | "getEntryBySlug" | "listTrophies" | "listLinks"
+  "listSection" | "getFacetCounts" | "getEntryBySlug" | "listTrophies" | "listLinks" | "listTagGroups"
 >;
 
 const defaultQueries: RouteQueries = {
@@ -53,6 +57,7 @@ const defaultQueries: RouteQueries = {
   getEntryBySlug,
   listTrophies,
   listLinks,
+  listTagGroups,
 };
 
 // Section -------------------------------------------------------------------
@@ -135,43 +140,128 @@ export async function loadTrophies(
 
 // All Software --------------------------------------------------------------
 
+/** One tag chip in Groups: `Label (n)`. */
+export interface TagChip {
+  readonly slug: string;
+  readonly label: string;
+  /** How many entries carry the tag. Never zero: a tag no entry carries has no chip. */
+  readonly count: number;
+  readonly href: string;
+  readonly active: boolean;
+}
+
+/** One category's row of tag chips — Skills, say. Never empty: a category with no chips has no row. */
+export interface TagRow {
+  readonly category: TagCategory;
+  /** A to Z by label. */
+  readonly chips: readonly TagChip[];
+}
+
 export interface AllPage {
-  /** The search as typed, trimmed; `""` when the index is not narrowed. */
-  readonly query: string;
-  /** How many entries the site has, whatever the search. */
+  /** What narrows the index, if anything — one thing at a time. */
+  readonly filter: AllFilter;
+  /** How many entries the site has, whatever the filter. */
   readonly total: number;
   /** The rows to list, in tile order; every entry appears at most once. */
   readonly entries: readonly EntrySummary[];
+  /** Groups, the facet row: `All (n)` plus every facet at least one entry has, counted across every kind. */
+  readonly facets: readonly FacetChip[];
+  /** Groups, the tag rows: one per category that has a chip, in `TAG_CATEGORIES` order. Empty when no entry is tagged. */
+  readonly tags: readonly TagRow[];
+}
+
+export type AllResult =
+  | { readonly kind: "found"; readonly page: AllPage }
+  /** `?tag=` named a slug no tag has (404). */
+  | { readonly kind: "not-found" };
+
+/** A to Z by label, whatever its case; the slug settles two labels that differ only by case. */
+function byLabel(a: Tag, b: Tag): number {
+  const x = a.label.toLowerCase();
+  const y = b.label.toLowerCase();
+  if (x !== y) return x < y ? -1 : 1;
+  return a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0;
 }
 
 /**
  * Everything `/all` renders (brief §5: the "full searchable index of every
- * entry"): one flat list of every kind, in the same tile order a section
- * uses, optionally narrowed by a search.
+ * entry", and "Groups — tag and facet browsing"): one flat list of every
+ * kind, in the same tile order a section uses, narrowed by at most one thing —
+ * a search, a facet or a tag — and the chips that offer each group.
  *
- * The search contract is the owner's (handoff/feat-shell-tile-grid.md). It
- * reads three fields — title, subtitle and summary, which are also what an
- * index row shows, so every match is visible on the page. It is
- * case-insensitive, every word typed must appear somewhere in those fields,
- * and a match keeps its place: nothing is ranked. Tags are not searched; the
- * plan gives this row `entries` only.
+ * Both contracts are the owner's. Search (handoff/feat-shell-tile-grid.md,
+ * BUILD_PLAN §5) reads three fields — title, subtitle and summary, which are
+ * also what an index row shows — case-insensitively; every word typed must
+ * appear somewhere in them, and a match keeps its place. It does not read
+ * tags. Groups (handoff/feat-shell-facets.md): a facet narrows across every
+ * kind; a tag narrows to the entries that carry it; team tags are a category
+ * like the others; a chip exists only for a group with at least one entry.
  *
- * It narrows in code rather than in the request. The lists are the ones the
- * sitemap already reads, held by the fetch cache, so a search costs no
- * database read — and what a visitor types never reaches a PostgREST filter.
- * @returns the index; `entries` is empty when nothing matches.
+ * Everything is narrowed and counted in code. The lists are the ones the
+ * sitemap already reads and the tags are one more cached read, so a filter
+ * costs no database round-trip of its own — and nothing a visitor types or
+ * puts in a URL ever reaches a PostgREST filter.
+ * @returns the index, with `entries` empty when nothing matches; or not-found for a tag slug no tag has.
  */
-export async function loadAll(query: string, queries: RouteQueries = defaultQueries): Promise<AllPage> {
-  const lists = await Promise.all(
-    SECTIONS.flatMap((section) => section.kinds).map((kind) => queries.listSection(kind, {})),
-  );
+export async function loadAll(filter: AllFilter, queries: RouteQueries = defaultQueries): Promise<AllResult> {
+  const [lists, groups] = await Promise.all([
+    Promise.all(SECTIONS.flatMap((section) => section.kinds).map((kind) => queries.listSection(kind, {}))),
+    queries.listTagGroups(),
+  ]);
   const all = lists.flat().sort(compareRecency);
-  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  const entries = all.filter((entry) => {
-    const text = [entry.title, entry.subtitle, entry.summary].join("\n").toLowerCase();
-    return words.every((word) => text.includes(word));
-  });
-  return { query, total: all.length, entries };
+  const listed = new Set(all.map((entry) => entry.id));
+
+  const facets: FacetChip[] = [
+    { facet: null, label: "All", count: all.length, href: allHref(), active: filter.kind === "none" },
+  ];
+  for (const candidate of FACET_ORDER) {
+    const count = all.filter((entry) => entry.facet === candidate).length;
+    if (count === 0) continue;
+    facets.push({
+      facet: candidate,
+      label: chipLabel(candidate),
+      count,
+      href: allHref({ facet: candidate }),
+      active: filter.kind === "facet" && filter.facet === candidate,
+    });
+  }
+
+  // A tag's entries, as far as the index lists them: the count on a chip is
+  // then exactly the number of rows the chip leads to.
+  const members = groups.map(({ tag, entryIds }) => ({
+    tag,
+    ids: new Set(entryIds.filter((id) => listed.has(id))),
+  }));
+  const tags: TagRow[] = TAG_CATEGORIES.map((category) => ({
+    category,
+    chips: members
+      .filter(({ tag, ids }) => tag.category === category && ids.size > 0)
+      .sort((a, b) => byLabel(a.tag, b.tag))
+      .map(({ tag, ids }) => ({
+        slug: tag.slug,
+        label: tag.label,
+        count: ids.size,
+        href: allHref({ tag: tag.slug }),
+        active: filter.kind === "tag" && filter.slug === tag.slug,
+      })),
+  })).filter((row) => row.chips.length > 0);
+
+  let entries = all;
+  if (filter.kind === "search") {
+    const words = filter.query.toLowerCase().split(/\s+/).filter(Boolean);
+    entries = all.filter((entry) => {
+      const text = [entry.title, entry.subtitle, entry.summary].join("\n").toLowerCase();
+      return words.every((word) => text.includes(word));
+    });
+  } else if (filter.kind === "facet") {
+    entries = all.filter((entry) => entry.facet === filter.facet);
+  } else if (filter.kind === "tag") {
+    const group = members.find(({ tag }) => tag.slug === filter.slug);
+    if (!group) return { kind: "not-found" };
+    entries = all.filter((entry) => group.ids.has(entry.id));
+  }
+
+  return { kind: "found", page: { filter, total: all.length, entries, facets, tags } };
 }
 
 // Resume --------------------------------------------------------------------
@@ -254,7 +344,8 @@ export interface SitemapUrl {
  * `SECTIONS` entry.
  *
  * What is left out is deliberate. `?facet=` views are subsets of their
- * section and canonicalise to it, as a `?q=` search does to `/all`;
+ * section and canonicalise to it, as a `?q=`, `?facet=` or `?tag=` view of the
+ * index does to `/all`;
  * `/privacy` and `/admin` are reserved and have no page. `lastModified` is only written where the database records
  * it — an entry's `updated_at`, which the row trigger stamps on real edits
  * only (the content seed upserts `where … is distinct from`) — and no

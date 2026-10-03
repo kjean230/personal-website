@@ -4,9 +4,11 @@ import {
   getFacetCounts,
   listLinks,
   listSection,
+  listTagGroups,
   listTrophies,
 } from "../../lib/content/queries";
-import { loadEntry, loadResume, loadSection, type RouteQueries } from "../../lib/routes/load";
+import { FACETS } from "../../lib/content/schema";
+import { loadAll, loadEntry, loadResume, loadSection, type AllPage, type RouteQueries } from "../../lib/routes/load";
 import { SECTIONS, entryHref, sectionForKind, sectionFromSegment } from "../../lib/routes/table";
 import { awaitPostgrest, createPool, createTestClient } from "./harness";
 
@@ -30,6 +32,7 @@ const queries: RouteQueries = {
   getEntryBySlug: (slug) => getEntryBySlug(slug, client),
   listTrophies: () => listTrophies(client),
   listLinks: () => listLinks(client),
+  listTagGroups: () => listTagGroups(client),
 };
 const slug: Record<keyof typeof CONTENT, string> = { btt: "", project: "", certification: "" };
 
@@ -149,6 +152,74 @@ describe("section routes", () => {
 
   it("is not-found for a slug no entry has", async () => {
     expect(await loadEntry(section("experience"), "no-such-slug", queries)).toEqual({ kind: "not-found" });
+  });
+});
+
+// `/all` and its Groups (feat/shell-facets), over real rows: the fixture's four
+// tags plus whatever the content seed holds. Expected values come from SQL.
+describe("/all", () => {
+  const found = async (filter: Parameters<typeof loadAll>[0]): Promise<AllPage> => {
+    const result = await loadAll(filter, queries);
+    if (result.kind !== "found") throw new Error("expected the index to be found");
+    return result.page;
+  };
+
+  it("lists every entry once, with facet chips that match a SQL group-by across every kind", async () => {
+    const page = await found({ kind: "none" });
+    const { rows } = await pool.query<{ facet: string | null; n: number }>(
+      "select facet, count(*)::int as n from public.entries group by facet",
+    );
+    const total = rows.reduce((sum, row) => sum + row.n, 0);
+    expect(page.total).toBe(total);
+    expect(page.entries).toHaveLength(total);
+    expect(new Set(page.entries.map((row) => row.id)).size).toBe(total);
+    expect(page.facets[0]).toMatchObject({ facet: null, count: total, href: "/all", active: true });
+    const expected = FACETS.filter((facet) => rows.some((row) => row.facet === facet));
+    expect(page.facets.slice(1).map((chip) => chip.facet)).toEqual(expected);
+    for (const chip of page.facets.slice(1)) {
+      expect(chip.count, String(chip.facet)).toBe(rows.find((row) => row.facet === chip.facet)?.n);
+      expect(chip.href).toBe(`/all?facet=${chip.facet}`);
+    }
+  });
+
+  it("narrows to one facet across kinds exactly as SQL does", async () => {
+    const page = await found({ kind: "facet", facet: "research" });
+    const { rows } = await pool.query<{ id: string; kind: string }>(
+      "select id, kind from public.entries where facet = 'research'",
+    );
+    expect(new Set(page.entries.map((row) => row.id))).toEqual(new Set(rows.map((row) => row.id)));
+    // Research is not one section's: the brief §4.1 record is an experience
+    // with a child project, and both carry it.
+    expect(new Set(rows.map((row) => row.kind)).size).toBeGreaterThan(1);
+    expect(page.entries.map((row) => row.id)).toContain(CONTENT.btt);
+  });
+
+  it("offers a chip for every tag with entries, and each chip leads to exactly those entries", async () => {
+    const { rows } = await pool.query<{ slug: string; category: string; entry_ids: string[] }>(
+      `select t.slug, t.category, array_agg(et.entry_id::text) as entry_ids
+         from public.tags t join public.entry_tags et on et.tag_id = t.id
+        group by t.id`,
+    );
+    const page = await found({ kind: "none" });
+    const chips = page.tags.flatMap((row) => row.chips.map((chip) => ({ ...chip, category: row.category })));
+    expect(chips.map((chip) => chip.slug).sort()).toEqual(rows.map((row) => row.slug).sort());
+    for (const row of rows) {
+      const chip = chips.find((candidate) => candidate.slug === row.slug);
+      expect(chip, row.slug).toMatchObject({ category: row.category, count: row.entry_ids.length, href: `/all?tag=${row.slug}` });
+      const narrowed = await found({ kind: "tag", slug: row.slug });
+      expect(new Set(narrowed.entries.map((entry) => entry.id)), row.slug).toEqual(new Set(row.entry_ids));
+      expect(narrowed.tags.flatMap((group) => group.chips).filter((candidate) => candidate.active).map((c) => c.slug)).toEqual([
+        row.slug,
+      ]);
+    }
+  });
+
+  it("is empty for a tag no entry carries, and not-found for a slug no tag has", async () => {
+    // The fixture's team tag is attached to nothing (supabase/seed.sql).
+    const empty = await found({ kind: "tag", slug: "fixture-team" });
+    expect(empty.entries).toEqual([]);
+    expect(empty.tags.flatMap((row) => row.chips).map((chip) => chip.slug)).not.toContain("fixture-team");
+    expect(await loadAll({ kind: "tag", slug: "no-such-tag" }, queries)).toEqual({ kind: "not-found" });
   });
 });
 

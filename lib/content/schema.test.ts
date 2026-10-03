@@ -9,10 +9,12 @@ import {
   STATUSES,
   TILE_COLUMNS,
   TILE_SELECT,
+  entryTagSchema,
   linkSchema,
   parseEntry,
   parseEntrySummary,
   parseRow,
+  slugSchema,
 } from "./schema";
 
 // The value sets and metadata shapes here are the ones both seeds use
@@ -164,5 +166,31 @@ describe("row fields", () => {
     expect(() => parseRow(linkSchema, "link", { id: base.id, entry_id: base.id, label: "x", url: "ftp://x", kind: "profile" })).toThrow(
       /Invalid link/,
     );
+  });
+});
+
+// feat/shell-facets: the junction the tag chips are counted from, and the slug
+// shape `?tag=` is held to before anything is looked up.
+describe("entry tags", () => {
+  const pair = {
+    entry_id: "0e02f978-92d2-5be6-a19a-b0addaa5bc2c",
+    tag_id: "00000000-0000-4000-8000-000000000201",
+  };
+
+  it("accepts a junction row: two ids and nothing else to know", () => {
+    expect(parseRow(entryTagSchema, "entry tag", pair)).toEqual(pair);
+  });
+
+  it("fails loudly on a row that is not two ids", () => {
+    for (const row of [{ entry_id: pair.entry_id }, { ...pair, tag_id: "python" }, { ...pair, entry_id: null }]) {
+      expect(() => parseRow(entryTagSchema, "entry tag", row)).toThrow(ContentValidationError);
+    }
+  });
+
+  it("holds a slug to the shape the database's CHECK does", () => {
+    for (const slug of ["python", "data-modeling", "k8s", "a"]) expect(slugSchema.safeParse(slug).success, slug).toBe(true);
+    for (const slug of ["", "Python", "a b", "-a", "a-", "a--b", "a_b", "a/b"]) {
+      expect(slugSchema.safeParse(slug).success, JSON.stringify(slug)).toBe(false);
+    }
   });
 });

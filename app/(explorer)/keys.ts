@@ -75,6 +75,32 @@ export function nextIndex(event: KeyLike, current: number, count: number, column
   }
 }
 
+/**
+ * Which item holds a row's one tab stop (feat/shell-facets).
+ *
+ * A row of chips can have a *current* item: the chip for the group the page is
+ * showing, marked `aria-current="page"`. That is where Tab should enter the
+ * row — a visitor on `/all?facet=research` who tabs to the facets expects to
+ * land on Research, not on All. A row with no current item is entered at its
+ * first, which is all the home row and the index grid ever do.
+ *
+ * The rule runs after every render, so it has to tell two cases apart. While
+ * the row's current item is the one it last saw, the tab stop is wherever the
+ * arrows or a click left it, and that must not be undone. When the current
+ * item has changed — a soft navigation keeps the island mounted, so following
+ * a chip or pressing Back changes it under a row that already has a tab stop —
+ * the stop moves to the new current item, or back to the first if there is
+ * none now.
+ * @param current index of the row's current item, or -1 when it has none
+ * @param seen the `current` this row had when the rule last ran; `null` on its first run
+ * @param active the row's tab stop so far
+ * @returns the index that should hold the row's tab stop now
+ */
+export function tabStop(current: number, seen: number | null, active: number): number {
+  if (seen === current) return active;
+  return current >= 0 ? current : 0;
+}
+
 const SKIP_KEYS: ReadonlySet<string> = new Set([
   "Enter",
   "Escape",
