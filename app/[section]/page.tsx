@@ -13,6 +13,7 @@ import {
 import { SITE_NAME } from "@/lib/site";
 import { FacetChips } from "../(explorer)/groups";
 import { KeyHints } from "../(explorer)/key-hints";
+import { Morph } from "../(explorer)/morph";
 import { TrophyState } from "../(explorer)/trophy";
 import { EntryDates } from "../entry-dates";
 import { JsonLd } from "../json-ld";
@@ -39,6 +40,10 @@ import styles from "../site.module.css";
 // classes, hrefs and text, plus what Explorer mode adds to them — the arrow
 // keys of brief §4.2 and each facet's glyph. Outside Explorer mode both are
 // inert and hidden, so the recruiter page is the one S6 shipped.
+//
+// feat/shell-detail-panel wraps each row in `<Morph>`, which is what lets a
+// row grow into its entry's panel in Explorer mode. It adds no element, and
+// the section stays a list in every mode.
 //
 // Canonical (feat/recruiter-seo): always the bare section URL. A `?facet=`
 // view is a subset of the section's own list, not a page of its own, so every
@@ -75,9 +80,13 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
       ) : (
         <ul className={styles.entryList}>
           {page.entries.map((entry) => (
-            <li key={entry.id} className={styles.indexEntry} data-status={entry.status}>
+            // A row is a morph surface (feat/shell-detail-panel): in Explorer
+            // mode it grows into the entry's panel. The wrapper renders no
+            // element and `data-morph` styles nothing, so the list is the list.
+            <Morph key={entry.id} slug={entry.slug}>
+            <li className={styles.indexEntry} data-status={entry.status} data-morph>
               <h2 className={styles.indexTitle}>
-                <Link href={entryHref(entry)} className={styles.entryLink}>
+                <Link href={entryHref(entry)} data-detail-opener="morph" className={styles.entryLink}>
                   {entry.title}
                 </Link>
               </h2>
@@ -98,6 +107,7 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
               )}
               {entry.summary && <p className={styles.indexSummary}>{entry.summary}</p>}
             </li>
+            </Morph>
           ))}
         </ul>
       )}

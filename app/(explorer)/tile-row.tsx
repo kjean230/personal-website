@@ -43,6 +43,15 @@
  * item (`aria-current="page"`) when it has one, otherwise its first. Only a
  * chip row ever has a current item, so the home row and the grid still start
  * on their first tile.
+ *
+ * Two things feat/shell-detail-panel needed of it. A focused item always
+ * claims its row's tab stop, even when focus arrives before this island's
+ * first effect has run — returning from a detail puts focus back on the card
+ * that opened it, and that card has to be where the arrows continue from. And
+ * the grid restarts on its first tile when `view` changes, instead of being
+ * remounted with a `key`: its cards carry the morph's names, and remounting
+ * them on a filter change would pair each surviving card with itself and
+ * slide it to its new place.
  */
 
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
@@ -71,10 +80,14 @@ interface TileRowProps {
   readonly grid?: boolean;
   /** True for a row of chips: a row, not a grid, and Explorer furniture all the same. */
   readonly explorerOnly?: boolean;
+  /** Detail rows enhance only inside a provenance-validated panel. */
+  readonly panelOnly?: boolean;
   /** The list's accessible name, where nothing around it already gives it one. */
   readonly label?: string;
   /** The id of a visible label that names the list; used instead of `label` when there is one. */
   readonly labelledBy?: string;
+  /** What the list is showing — a filter, a search. A change restarts the tab stop on the first item. */
+  readonly view?: string;
 }
 
 export function TileRow({
@@ -82,18 +95,23 @@ export function TileRow({
   className = styles.tiles,
   grid = false,
   explorerOnly = false,
+  panelOnly = false,
   label,
   labelledBy,
+  view,
 }: TileRowProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const activeRef = useRef(0);
   /** The row's current item as `applyRoving` last saw it; `null` until it has run. */
   const seenRef = useRef<number | null>(null);
+  /** The view `applyRoving` last wrote the tab stop for. */
+  const viewRef = useRef(view);
 
   /** Whether this list is under the island's control right now. Read on use: the mode is the document's, not React's. */
   const enabled = useCallback(
-    () => !(grid || explorerOnly) || isExplorer(document.documentElement),
-    [grid, explorerOnly],
+    () => (!(grid || explorerOnly) || isExplorer(document.documentElement)) &&
+      (!panelOnly || Boolean(listRef.current?.closest("[data-panel]"))),
+    [grid, explorerOnly, panelOnly],
   );
 
   /** The row's tiles, in document order. `[data-tile]` so a nested link can never join the row. */
@@ -103,25 +121,36 @@ export function TileRow({
     [],
   );
 
-  /** Writes the roving tabindex: exactly one tile is reachable by Tab. */
-  const applyRoving = useCallback(() => {
-    const items = tiles();
-    if (items.length === 0 || !enabled()) return;
-    const current = items.findIndex((item) => item.getAttribute("aria-current") === "page");
-    activeRef.current = tabStop(current, seenRef.current, activeRef.current);
-    seenRef.current = current;
-    if (activeRef.current >= items.length) activeRef.current = 0;
-    for (const [index, tile] of items.entries()) {
-      tile.tabIndex = index === activeRef.current ? 0 : -1;
-    }
-  }, [tiles, enabled]);
+  /**
+   * Writes the roving tabindex: exactly one tile is reachable by Tab. A tile
+   * that has just taken focus is passed in and is that one, whatever the rule
+   * would otherwise have picked.
+   */
+  const applyRoving = useCallback(
+    (focused?: number) => {
+      const items = tiles();
+      if (items.length === 0 || !enabled()) return;
+      const current = items.findIndex((item) => item.getAttribute("aria-current") === "page");
+      if (viewRef.current !== view) {
+        viewRef.current = view;
+        activeRef.current = 0;
+      }
+      activeRef.current = focused ?? tabStop(current, seenRef.current, activeRef.current);
+      seenRef.current = current;
+      if (activeRef.current >= items.length) activeRef.current = 0;
+      for (const [index, tile] of items.entries()) {
+        tile.tabIndex = index === activeRef.current ? 0 : -1;
+      }
+    },
+    [tiles, enabled, view],
+  );
 
   // No dependency array: this runs after every render, which is what makes it
   // self-healing. A soft navigation back to `/` can hand the island fresh
   // children; if React replaced any anchor node, the tabindexes written to the
   // old ones are gone and all six would silently become tab stops again.
   // Rewriting six attributes is cheap enough that correctness wins.
-  useEffect(applyRoving);
+  useEffect(() => applyRoving());
 
   // Clicking or shift-Tabbing into the middle of the row makes that tile the
   // row's entry point, so Tab out and back never lands somewhere stale.
@@ -132,8 +161,7 @@ export function TileRow({
     const focused = event.target as Element;
     const index = tiles().findIndex((tile) => tile === focused);
     if (index < 0) return;
-    activeRef.current = index;
-    applyRoving();
+    applyRoving(index);
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLUListElement>) {

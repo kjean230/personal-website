@@ -54,6 +54,39 @@ samp {
   }
 }
 
+/* The card → panel morph (feat/shell-detail-panel). The motion is the
+ * browser's view transition, started by React when a card and the panel it
+ * opens share a name ((explorer)/morph.tsx). These rules are its whole timing,
+ * and they live here for the reason the rule above does: the pseudo-elements
+ * belong to the document, and a CSS module cannot address them.
+ *
+ * Every group, not one class: the owner's contract is that a morph runs on
+ * --duration-slow with --ease-glide or does not run, so no view transition on
+ * this site may fall back to the browser's own 250ms ease. tokens.css zeroes
+ * the duration under prefers-reduced-motion — and morph.tsx renders no
+ * boundary at all there, so nothing is even started.
+ *
+ * The page root is taken out. Only the card moves; everything else changes at
+ * once, as a route change always has here. The old page is not drawn, the new
+ * one is drawn with no animation, and the root's own group has none — which
+ * also means a navigation with no pair in it has nothing to wait for.
+ */
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease-glide);
+}
+
+::view-transition-group(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(root) {
+  display: none;
+}
+
 /* Print. A print stylesheet inherits prefers-color-scheme, so a visitor whose
  * system is dark prints the ink theme: --color-text is #F2ECDD, near-white, onto
  * a sheet whose --color-surface the printer omits by default. The page comes out

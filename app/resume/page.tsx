@@ -4,6 +4,7 @@ import { profilePageJsonLd } from "@/lib/render/json-ld";
 import { loadResume } from "@/lib/routes/load";
 import { RESUME_HREF, entryHref } from "@/lib/routes/table";
 import { SITE_NAME } from "@/lib/site";
+import { TrailKeeper } from "../(explorer)/trail-keeper";
 import { EntryDates } from "../entry-dates";
 import { JsonLd } from "../json-ld";
 import { CONTACT, Contact } from "./contact";
@@ -61,7 +62,7 @@ export default async function ResumePage() {
                 <li key={entry.id}>
                   <article className={styles.resumeRow} data-status={entry.status}>
                     <h3 className={styles.resumeTitle}>
-                      <Link href={entryHref(entry)} className={styles.entryLink}>
+                      <Link href={entryHref(entry)} data-detail-opener="resume" className={styles.entryLink}>
                         {entry.title}
                       </Link>
                     </h3>
@@ -86,6 +87,10 @@ export default async function ResumePage() {
           )}
         </section>
       ))}
+      {/* Renders nothing. In Explorer mode it records which row opened a
+          detail, so Back can put focus on that row again (feat/shell-detail-
+          panel); outside Explorer mode it does nothing at all. */}
+      <TrailKeeper />
       <JsonLd data={profile} />
     </main>
   );

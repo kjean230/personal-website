@@ -353,15 +353,19 @@
   font: inherit;
 }
 
-/* The link to the index from the home page, each index row's drawing, and each
- * facet chip's glyph (feat/shell-facets): Explorer furniture, so none renders
- * until the rules below say so. With no mode — JavaScript off, a deep link, a
- * session that never chose — the home page has no such link, the index is the
- * plain list site.module.css draws, and a chip is its text.
+/* The link to the index from the home page, each index row's drawing, each
+ * facet chip's glyph (feat/shell-facets), and the detail panel's Back control
+ * (feat/shell-detail-panel): Explorer furniture, so none renders until the
+ * rules below say so. With no mode — JavaScript off, a deep link, a session
+ * that never chose — the home page has no such link, the index is the plain
+ * list site.module.css draws, a chip is its text, and an entry page is the
+ * document S6 shipped. The panel's face is a .gridIcon, so it is in this list
+ * already.
  */
 .rail,
 .gridIcon,
-.chipIcon {
+.chipIcon,
+.back {
   display: none;
 }
 
@@ -624,4 +628,94 @@
   :global(html[data-mode="explorer"]) .grid:focus-within .gridTile:not(:hover):not(:focus-within) {
     transform: scale(var(--scale-recede));
   }
+}
+
+/* ==========================================================================
+ * The detail panel (feat/shell-detail-panel, brief §5: the options page).
+ *
+ * The entry page's own record — the same <article>, in the same order — drawn
+ * as a raised sheet: the grid card's treatment one step up, so the card that
+ * grows into it arrives somewhere that looks like where it left. `.record`
+ * and `.detailRail` are the two wrappers app/entry-record.tsx puts round S6's
+ * markup; outside Explorer mode none of these classes matches a rule, and the
+ * page is the recruiter document. A valid trail alone adds data-panel;
+ * Explorer direct navigation and reload keep the ordinary document.
+ *
+ * No breakpoint: the rail wraps under the record when the two no longer fit
+ * side by side, which on a phone is S6's reading order exactly. A custom
+ * property is illegal in an @media condition, so a breakpoint could never
+ * have been a token.
+ *
+ * No motion here either. The card → panel morph is the browser's view
+ * transition; its timing is two tokens on the transition's own pseudo-
+ * elements, which only app/app.css can address.
+ * ========================================================================== */
+
+:global(html[data-mode="explorer"]) .panel[data-panel] {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-10);
+  /* The Back control sits in the top band, so the content starts under it. */
+  padding: calc(var(--size-touch-min) + var(--space-8)) var(--space-8) var(--space-8);
+  border: var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  box-shadow: var(--elevation-3);
+}
+
+/* 28rem and 20rem: the record takes two shares of the width to the rail's one
+ * while both fit, and each takes the whole width once they do not.
+ */
+:global(html[data-mode="explorer"]) .panel[data-panel] .record {
+  flex: 2 1 calc(var(--space-16) * 7);
+  min-width: 0;
+}
+
+:global(html[data-mode="explorer"]) .panel[data-panel] .detailRail {
+  flex: 1 1 calc(var(--space-16) * 5);
+  min-width: 0;
+}
+
+/* The rail's first heading lines up with the record's face. */
+:global(html[data-mode="explorer"]) .panel[data-panel] .detailRail > :first-child {
+  margin-block-start: 0;
+}
+
+:global(html[data-mode="explorer"]) .panel[data-panel] .gridIcon {
+  margin-block-end: var(--space-4);
+}
+
+/* Back: the B glyph and its word, top corner. A real link to the section;
+ * what it does with a plain click is detail-keys.tsx's to say.
+ */
+:global(html[data-mode="explorer"]) .panel[data-panel] .back {
+  position: absolute;
+  inset-block-start: var(--space-4);
+  inset-inline-end: var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-touch-min);
+  padding: 0 var(--space-4);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+:global(html[data-mode="explorer"]) .panel[data-panel] .back:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* Only an entry opened by a real, validated opener uses the panel width. */
+:global(html[data-mode="explorer"]) :global(main):has(.panel[data-panel]) {
+  max-width: calc(var(--space-16) * 20);
+}
+
+/* A direct Explorer detail remains the ordinary canonical document. */
+.panel:not([data-panel]) .gridIcon {
+  display: none;
 }

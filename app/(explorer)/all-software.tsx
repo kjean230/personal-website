@@ -37,6 +37,7 @@ import {
 import { EntryDates } from "../entry-dates";
 import site from "../site.module.css";
 import { Groups } from "./groups";
+import { Morph } from "./morph";
 import { TileRow } from "./tile-row";
 import { ALL_ICON, tileIcon } from "./tiles";
 import styles from "./explorer.module.css";
@@ -88,9 +89,12 @@ export function AllSoftware({ page }: { page: AllPage }) {
   const searching = filter.kind === "search";
   const query = searching ? filter.query : "";
   const found = page.entries.length;
-  // One grid per view. A chip is a soft navigation, which would otherwise keep
-  // the island mounted with its tab stop on whichever card the last view left
-  // it; a new key gives each narrowed list a grid that starts on its first.
+  // What the grid is showing. A chip is a soft navigation, which keeps the
+  // island mounted with its tab stop on whichever card the last view left it;
+  // a change of `view` restarts the grid on its first card. It is a prop and
+  // not a `key` (feat/shell-detail-panel): the cards carry the morph's names,
+  // and remounting them would pair every surviving card with itself and slide
+  // it to its new place — motion nobody asked for.
   const view = filter.kind === "facet" ? filter.facet : filter.kind === "tag" ? filter.slug : query;
 
   return (
@@ -119,14 +123,17 @@ export function AllSoftware({ page }: { page: AllPage }) {
       <Groups facets={page.facets} tags={page.tags} />
       <p className={site.note}>{statusLine(page, query)}</p>
       {found > 0 && (
-        <TileRow grid key={`${filter.kind}:${view}`} className={`${site.entryList} ${styles.grid}`}>
+        <TileRow grid view={`${filter.kind}:${view}`} className={`${site.entryList} ${styles.grid}`}>
           {page.entries.map((entry) => {
             const section = sectionForKind(entry.kind);
             return (
+              // A card is a morph surface: in Explorer mode it grows into the
+              // entry's panel. The wrapper renders no element of its own.
+              <Morph key={entry.id} slug={entry.slug}>
               <li
-                key={entry.id}
                 className={`${site.indexEntry} ${styles.gridTile}`}
                 data-status={entry.status}
+                data-morph
               >
                 {/* The section's own drawing: the index mixes kinds, and no
                     Storage-backed tile art renders before feat/shell-album-news. */}
@@ -137,6 +144,7 @@ export function AllSoftware({ page }: { page: AllPage }) {
                 <h2 className={site.indexTitle}>
                   <Link
                     href={entryHref(entry)}
+                    data-detail-opener="morph"
                     data-tile
                     className={`${site.entryLink} ${styles.gridLink}`}
                   >
@@ -154,6 +162,7 @@ export function AllSoftware({ page }: { page: AllPage }) {
                 </p>
                 {entry.summary && <p className={site.indexSummary}>{entry.summary}</p>}
               </li>
+              </Morph>
             );
           })}
         </TileRow>
