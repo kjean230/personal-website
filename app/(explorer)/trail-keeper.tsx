@@ -36,20 +36,38 @@ import {
   type Opener,
 } from "./trail";
 
+/** The same authorization boundary for recording an opener and finding it again. */
+function readOpener(link: HTMLAnchorElement): Opener | null {
+  if (!link.closest("#main") || link.origin !== location.origin || link.search || link.hash ||
+      link.hasAttribute("download") || (link.target !== "" && link.target !== "_self")) return null;
+  const surface = link.dataset.detailOpener;
+  const origin = link.dataset.origin ?? null;
+  if (surface === "morph" && origin === null && link.closest("[data-morph]")) {
+    return { href: link.pathname, origin, morph: true };
+  }
+  if (surface === "related" && origin && link.closest("nav[aria-label='Related']")) {
+    return { href: link.pathname, origin, morph: false };
+  }
+  if (surface === "resume" && origin === null && location.pathname === "/resume") {
+    return { href: link.pathname, origin, morph: false };
+  }
+  return null;
+}
+
 /**
- * The exact link that opened a detail, or `null`. "Exact" is literal: a
- * Related row is found by its own identity and must still lead to that detail;
- * any other opener must be the only link on the page that does. Zero matches
- * or several is no answer, and no answer moves nothing.
+ * Only a uniquely matching authorized opener may receive focus. A destination
+ * alone is not identity: preserve the morph surface or exact Related identity,
+ * and recheck the marker and container even when the original link is gone.
  */
 function resolveOpener(opener: Opener): HTMLAnchorElement | null {
   const main = document.getElementById("main");
   if (!main) return null;
   const links = Array.from(main.querySelectorAll<HTMLAnchorElement>("a[href]")).filter(
-    (link) =>
-      link.origin === location.origin &&
-      link.pathname === opener.href &&
-      (opener.origin === null || link.dataset.origin === opener.origin),
+    (link) => {
+      const candidate = readOpener(link);
+      return candidate !== null && candidate.href === opener.href &&
+        candidate.origin === opener.origin && candidate.morph === opener.morph;
+    },
   );
   return links.length === 1 ? links[0] : null;
 }
@@ -97,22 +115,14 @@ export function TrailKeeper({ detail }: { detail?: string }) {
       if (link.pathname === location.pathname && link.search === location.search) return;
       // Only the recovered entry surfaces may establish a trail. Header,
       // markdown and other document links stay ordinary navigation.
-      const surface = link.dataset.detailOpener;
-      const permitted = link.closest("#main") &&
-        ((surface === "morph" && link.closest("[data-morph]")) ||
-          (surface === "related" && link.closest("nav[aria-label='Related']")) ||
-          (surface === "resume" && location.pathname === "/resume"));
+      const opener = readOpener(link);
       const fromKey = historyKeys(window).current;
-      if (!permitted || link.search || link.hash || !fromKey) {
+      if (!opener || !fromKey) {
         writeTrail(NONE);
         return;
       }
       writeTrail(
-        activated(link.pathname, fromKey, {
-          href: link.pathname,
-          origin: link.dataset.origin ?? null,
-          morph: link.closest("[data-morph]") !== null,
-        }),
+        activated(link.pathname, fromKey, opener),
       );
     }
     // Capture phase here too, and for a measured reason: React commits a
