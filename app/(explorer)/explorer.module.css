@@ -158,6 +158,29 @@
   height: 100%;
 }
 
+/* The full case reuses the index cards. Only Explorer enlarges the existing
+ * status glyph; Recruiter retains S8's inline marker and list presentation.
+ * Long titles and enlarged text can wrap within a narrow card. */
+:global(html[data-mode="explorer"]) .trophyCase {
+  overflow-wrap: anywhere;
+}
+
+:global(html[data-mode="explorer"]) .trophyCase .gridLink {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:global(html[data-mode="explorer"]) .trophyCase .trophy {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+:global(html[data-mode="explorer"]) .trophyCase .trophyIcon {
+  width: var(--size-icon-lg);
+  height: var(--size-icon-lg);
+  flex-shrink: 0;
+}
+
 /* Boot, then profile select (feat/shell-boot-profile, brief §5) — one modal
  * <dialog> covering the viewport on the surface colour.
  *

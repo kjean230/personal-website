@@ -14,7 +14,8 @@ import { SITE_NAME } from "@/lib/site";
 import { FacetChips } from "../(explorer)/groups";
 import { KeyHints } from "../(explorer)/key-hints";
 import { Morph } from "../(explorer)/morph";
-import { TrophyState } from "../(explorer)/trophy";
+import { TrophyCase } from "../(explorer)/trophy-case";
+import explorer from "../(explorer)/explorer.module.css";
 import { EntryDates } from "../entry-dates";
 import { JsonLd } from "../json-ld";
 import styles from "../site.module.css";
@@ -44,6 +45,8 @@ import styles from "../site.module.css";
 // feat/shell-detail-panel wraps each row in `<Morph>`, which is what lets a
 // row grow into its entry's panel in Explorer mode. It adds no element, and
 // the section stays a list in every mode.
+// TrophyCase (feat/shell-trophy-full) owns the trophy rows: the same server
+// content, with Explorer-only cards and the existing grid navigation.
 //
 // Canonical (feat/recruiter-seo): always the bare section URL. A `?facet=`
 // view is a subset of the section's own list, not a page of its own, so every
@@ -70,12 +73,14 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
   const page = await loadSection(section, facet.facet);
 
   return (
-    <main id="main" className={styles.main}>
+    <main id="main" className={section.trophyCase ? `${styles.main} ${explorer.allMain}` : styles.main}>
       <h1 className={styles.heading}>{section.label}</h1>
       <nav aria-label="Facets" className={styles.chips}>
         <FacetChips chips={page.chips} />
       </nav>
-      {page.entries.length === 0 ? (
+      {section.trophyCase ? (
+        <TrophyCase entries={page.entries} facet={page.facet} />
+      ) : page.entries.length === 0 ? (
         <p className={styles.note}>Nothing here yet.</p>
       ) : (
         <ul className={styles.entryList}>
@@ -92,19 +97,7 @@ export default async function SectionPage({ params, searchParams }: PageProps<"/
               </h2>
               {entry.subtitle && <p className={styles.subtitle}>{entry.subtitle}</p>}
               <EntryDates entry={entry} />
-              {/* The trophy case shows the state as a drawing plus its name and
-                  then the category; elsewhere the status is only worth saying
-                  when it is not the plain `unlocked`. The `kind` check is what
-                  narrows `metadata.category`, and `trophyCase` is what says why
-                  we are drawing a trophy — /certifications is the only section
-                  where both are true. */}
-              {section.trophyCase && entry.kind === "certification" ? (
-                <p className={styles.meta}>
-                  <TrophyState status={entry.status} /> · {entry.metadata.category}
-                </p>
-              ) : (
-                entry.status !== "unlocked" && <p className={styles.meta}>{statusText(entry.status)}</p>
-              )}
+              {entry.status !== "unlocked" && <p className={styles.meta}>{statusText(entry.status)}</p>}
               {entry.summary && <p className={styles.indexSummary}>{entry.summary}</p>}
             </li>
             </Morph>
