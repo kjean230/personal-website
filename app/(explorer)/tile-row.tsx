@@ -74,6 +74,8 @@ function columnsOf(items: readonly HTMLElement[]): number {
 
 interface TileRowProps {
   readonly children: ReactNode;
+  /** Restore list semantics when a caller's unbulleted list needs them in Safari. */
+  readonly role?: "list";
   /** The list's class; the home row's by default. */
   readonly className?: string;
   /** True for the index grid. */
@@ -92,6 +94,7 @@ interface TileRowProps {
 
 export function TileRow({
   children,
+  role,
   className = styles.tiles,
   grid = false,
   explorerOnly = false,
@@ -195,6 +198,7 @@ export function TileRow({
   return (
     <ul
       ref={listRef}
+      role={role}
       className={className}
       aria-label={label}
       aria-labelledby={labelledBy}
