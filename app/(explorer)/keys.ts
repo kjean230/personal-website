@@ -23,7 +23,7 @@ export interface KeyLike {
 }
 
 /** @returns true when any modifier is held, i.e. the chord belongs to the browser or the OS. */
-function modified(event: KeyLike): boolean {
+function modified(event: Omit<KeyLike, "key">): boolean {
   return Boolean(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey);
 }
 
@@ -149,6 +149,41 @@ export function isBackKey(event: BackKeyLike, editableTarget: boolean): boolean 
   if (event.defaultPrevented || event.isComposing) return false;
   if (modified(event)) return false;
   return !editableTarget;
+}
+
+/**
+ * Whether Escape and the Back control on a detail may go *back* rather than
+ * *up* (feat/shell-detail-panel): only when the entry one step behind in
+ * history is demonstrably on this site. The owner's rule, written out:
+ *
+ *   allowed ⇔ the Navigation API is available ∧ a previous entry exists
+ *             ∧ its URL parses ∧ its origin is this document's origin
+ *
+ * `canGoBack` is deliberately not the test — it says a step back exists, not
+ * where it leads. The caller passes the previous entry's URL as the browser
+ * gives it: absent without the API or without a previous entry, `null` when
+ * the browser withholds it. Any of those means up, to the entry's section.
+ * @returns true when `router.back()` stays on this site.
+ */
+export function contextualBack(previousUrl: string | null | undefined, origin: string): boolean {
+  if (typeof previousUrl !== "string" || !URL.canParse(previousUrl)) return false;
+  return new URL(previousUrl).origin === origin;
+}
+
+/** The parts of a mouse event the click rule reads. */
+export interface ClickLike extends Omit<KeyLike, "key"> {
+  readonly button: number;
+}
+
+/**
+ * Whether a click is the plain, primary kind the shell may act on. Anything
+ * else — a middle click, or one with Cmd, Ctrl, Shift or Alt held — is the
+ * visitor asking the browser for a new tab, a new window or a download, and
+ * the link must stay an ordinary link for it.
+ * @returns true for an unmodified primary-button click (which is also what Enter on a link dispatches).
+ */
+export function isPlainClick(event: ClickLike): boolean {
+  return event.button === 0 && !modified(event);
 }
 
 /** Elements that own Escape before the shell does. Exported so the rule and the island cannot drift. */

@@ -12,6 +12,12 @@
  * without the other. The home page passes no `backHref` — there is nothing
  * above `/` — so it gets the Select hint alone and no Escape binding.
  *
+ * The entry page passes `detail`, its own canonical URL, and gets
+ * `<DetailKeys>` in `<BackKey>`'s place (feat/shell-detail-panel): the same
+ * key under the same hint, with the detail's rule for where it leads. Every
+ * page with a hint row also mounts `<TrailKeeper>`, which is what knows how a
+ * detail was opened.
+ *
  * A `<p>` of `<span>`s, not a `<ul>`: two items announced as "list, 2 items"
  * is noise, and `/` already has two labelled landmarks ("Site", "Sections").
  * The glyphs are decorative; the `<kbd>` text is the accessible content, so a
@@ -20,13 +26,23 @@
  */
 
 import { BackKey } from "./back-key";
+import { DetailKeys } from "./detail-keys";
 import { HINT_ICONS } from "./tiles";
+import { TrailKeeper } from "./trail-keeper";
 import styles from "./explorer.module.css";
 
-export function KeyHints({ backHref }: { backHref?: string }) {
+interface KeyHintsProps {
+  /** Where Escape leads. Absent on the home page, which has nothing above it. */
+  readonly backHref?: string;
+  /** The entry page's own canonical URL; its presence is what makes the page a detail. */
+  readonly detail?: string;
+}
+
+export function KeyHints({ backHref, detail }: KeyHintsProps) {
   return (
     <>
-      {backHref && <BackKey href={backHref} />}
+      <TrailKeeper detail={detail} />
+      {backHref && (detail ? <DetailKeys href={backHref} detail={detail} /> : <BackKey href={backHref} />)}
       <p className={styles.hints}>
         <span className={styles.hint}>
           <span
